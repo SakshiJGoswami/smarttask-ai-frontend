@@ -42,7 +42,7 @@ const teamTasks = [
 
 export default function ManagerDashboard() {
   return (
-    <DashboardLayout role="manager">
+    <DashboardLayout >
       {/* HEADER */}
       <div className="mb-8">
         <h1 className="text-2xl font-semibold mb-1">Manager Dashboard</h1>

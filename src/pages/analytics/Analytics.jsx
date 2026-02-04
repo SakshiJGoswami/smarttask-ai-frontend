@@ -21,7 +21,12 @@ const taskData = [
   { month: "Jun", tasks: 1020 },
   { month: "Jul", tasks: 1280 },
 ];
-const aiInsights = useAIInsights("admin", "analytics");
+
+export default function Analytics() {
+  const { user } = useAuth();
+  const aiInsights = useAIInsights(user.role, "analytics");
+}
+
 
 const productivityData = [
   { team: "Dev", value: 92 },
@@ -32,7 +37,7 @@ const productivityData = [
 
 export default function Analytics() {
   return (
-    <DashboardLayout role="admin">
+    <DashboardLayout >
       {/* HEADER */}
       <div className="mb-8">
         <h1 className="text-2xl font-semibold mb-1">Analytics</h1>

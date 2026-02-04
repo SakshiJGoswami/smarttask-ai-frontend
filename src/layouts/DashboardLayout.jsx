@@ -7,7 +7,10 @@ import AIFloatingButton from "../components/ai/AIFloatingButton";
 const SIDEBAR_WIDTH = 256; // 16rem
 const AI_WIDTH = 380; // px
 
-export default function DashboardLayout({ children, role = "employee" }) {
+export default function DashboardLayout({ children }) {
+  const { user } = useAuth();
+  const role = user?.role || "employee";
+
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [openAI, setOpenAI] = useState(false);

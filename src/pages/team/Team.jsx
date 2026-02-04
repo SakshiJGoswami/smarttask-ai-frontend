@@ -37,7 +37,7 @@ const teamMembers = [
 
 export default function Team() {
   return (
-    <DashboardLayout role="admin">
+    <DashboardLayout >
       <div className="space-y-10">
 
         {/* HEADER */}
