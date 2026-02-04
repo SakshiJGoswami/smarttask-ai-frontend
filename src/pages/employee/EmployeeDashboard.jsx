@@ -81,7 +81,8 @@ export default function EmployeeDashboard() {
   const aiInsights = useAIInsights("employee", "dashboard");
 
   return (
-    <DashboardLayout role="employee">
+   <DashboardLayout role="employee">
+
       {/* HEADER */}
       <div className="mb-8">
         <h1 className="text-2xl font-semibold mb-1">My Dashboard</h1>

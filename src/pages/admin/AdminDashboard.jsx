@@ -35,7 +35,7 @@ const aiInsights = useAIInsights("admin", "dashboard");
 
 export default function AdminDashboard() {
   return (
-    <DashboardLayout>
+    <DashboardLayout role="admin">
       {/* HEADER */}
       <div className="mb-8">
         <h1 className="text-2xl font-semibold mb-1">Admin Dashboard</h1>
