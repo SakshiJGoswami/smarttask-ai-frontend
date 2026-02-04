@@ -34,19 +34,35 @@ export default function DashboardLayout({ children }) {
           <span className="text-lg font-semibold">SmartTask AI</span>
         </div>
 
-        <nav className="flex-1 space-y-2">
-          <NavLink to={`/${role}`} className={navStyle}>Dashboard</NavLink>
-          <NavLink to="/tasks" className={navStyle}>Tasks</NavLink>
-          <NavLink to="/projects" className={navStyle}>Projects</NavLink>
-          <NavLink to="/profile" className={navStyle}>Profile</NavLink>
+       <nav className="flex-1 space-y-2">
+  <NavLink to={`/${role}`} className={navStyle}>
+    Dashboard
+  </NavLink>
 
-          {(role === "admin" || role === "manager") && (
-            <>
-              <NavLink to="/analytics" className={navStyle}>Analytics</NavLink>
-              <NavLink to="/team" className={navStyle}>Team</NavLink>
-            </>
-          )}
-        </nav>
+  <NavLink to="/tasks" className={navStyle}>
+    Tasks
+  </NavLink>
+
+  <NavLink to="/projects" className={navStyle}>
+    Projects
+  </NavLink>
+
+  <NavLink to="/profile" className={navStyle}>
+    Profile
+  </NavLink>
+
+  {(role === "admin" || role === "manager") && (
+    <>
+      <NavLink to={`/${role}/analytics`} className={navStyle}>
+        Analytics
+      </NavLink>
+
+      <NavLink to={`/${role}/team`} className={navStyle}>
+        Team
+      </NavLink>
+    </>
+  )}
+</nav>
 
         <button
           onClick={handleLogout}

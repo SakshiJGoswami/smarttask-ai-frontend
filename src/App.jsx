@@ -9,6 +9,7 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManagerDashboard from "./pages/manager/ManagerDashboard";
 import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
+import Profile from "./pages/profile/Profile";
 
 import Tasks from "./pages/tasks/Tasks";
 import TaskDetail from "./pages/tasks/TaskDetail";
@@ -17,8 +18,7 @@ import ProjectDetail from "./pages/projects/ProjectDetail";
 import Analytics from "./pages/analytics/Analytics";
 import Team from "./pages/team/Team";
 import Insights from "./pages/analytics/Insights";
-
-import DashboardLayout from "./layouts/DashboardLayout";
+import Unauthorized from "./pages/Unauthorized";
 
 export default function App() {
   return (
@@ -31,14 +31,32 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/analytics/insights" element={<Insights />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* ADMIN */}
           <Route
             path="/admin"
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
-                   <AdminDashboard />
-       
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/analytics"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Analytics />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/team"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Team />
               </ProtectedRoute>
             }
           />
@@ -48,8 +66,25 @@ export default function App() {
             path="/manager"
             element={
               <ProtectedRoute allowedRoles={["manager"]}>
-                  <ManagerDashboard />
-               
+                <ManagerDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/manager/analytics"
+            element={
+              <ProtectedRoute allowedRoles={["manager", "admin"]}>
+                <Analytics />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/manager/team"
+            element={
+              <ProtectedRoute allowedRoles={["manager", "admin"]}>
+                <Team />
               </ProtectedRoute>
             }
           />
@@ -59,8 +94,7 @@ export default function App() {
             path="/employee"
             element={
               <ProtectedRoute allowedRoles={["employee"]}>
-                  <EmployeeDashboard />
-           
+                <EmployeeDashboard />
               </ProtectedRoute>
             }
           />
@@ -70,9 +104,7 @@ export default function App() {
             path="/tasks"
             element={
               <ProtectedRoute allowedRoles={["admin","manager","employee"]}>
-               
-                  <Tasks />
-           
+                <Tasks />
               </ProtectedRoute>
             }
           />
@@ -81,9 +113,7 @@ export default function App() {
             path="/tasks/:id"
             element={
               <ProtectedRoute allowedRoles={["admin","manager","employee"]}>
-         
-                  <TaskDetail />
-            
+                <TaskDetail />
               </ProtectedRoute>
             }
           />
@@ -92,9 +122,7 @@ export default function App() {
             path="/projects"
             element={
               <ProtectedRoute allowedRoles={["admin","manager","employee"]}>
-                
-                  <Projects />
-               
+                <Projects />
               </ProtectedRoute>
             }
           />
@@ -103,36 +131,22 @@ export default function App() {
             path="/projects/:id"
             element={
               <ProtectedRoute allowedRoles={["admin","manager","employee"]}>
-           
-                  <ProjectDetail />
-             
+                <ProjectDetail />
               </ProtectedRoute>
             }
           />
+<Route
+  path="/profile"
+  element={
+    <ProtectedRoute allowedRoles={["admin","manager","employee"]}>
+      <Profile />
+    </ProtectedRoute>
+  }
+/>
 
-          <Route
-            path="/analytics"
-            element={
-              <ProtectedRoute allowedRoles={["admin","manager"]}>
-              
-                  <Analytics />
-         
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/team"
-            element={
-              <ProtectedRoute allowedRoles={["admin","manager"]}>
-               
-                  <Team />
-             
-              </ProtectedRoute>
-            }
-          />
-
+          {/* FALLBACK */}
           <Route path="*" element={<Navigate to="/" />} />
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>
