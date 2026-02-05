@@ -10,11 +10,15 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManagerDashboard from "./pages/manager/ManagerDashboard";
 import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 import Profile from "./pages/profile/Profile";
+import EditProfile from "./pages/profile/EditProfile";
 
+import Settings from "./pages/settings/Settings";
 import Tasks from "./pages/tasks/Tasks";
 import TaskDetail from "./pages/tasks/TaskDetail";
+import EditTask from "./pages/tasks/EditTask";
 import Projects from "./pages/projects/Projects";
 import ProjectDetail from "./pages/projects/ProjectDetail";
+import EditProject from "./pages/projects/EditProject";
 import Analytics from "./pages/analytics/Analytics";
 import Team from "./pages/team/Team";
 import Insights from "./pages/analytics/Insights";
@@ -117,6 +121,16 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+<Route
+  path="/tasks/:id/edit"
+  element={
+    <ProtectedRoute allowedRoles={["admin","manager","employee"]}>
+      <EditTask />
+    </ProtectedRoute>
+  }
+/>
+
+
 
           <Route
             path="/projects"
@@ -135,6 +149,18 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+        <Route
+  path="/projects/:id/edit"
+  element={
+    <ProtectedRoute allowedRoles={["admin","manager","employee"]}>
+      <EditProject />
+    </ProtectedRoute>
+  }
+/>
+
+
+
+
 <Route
   path="/profile"
   element={
@@ -143,7 +169,24 @@ export default function App() {
     </ProtectedRoute>
   }
 />
+<Route
+  path="/profile/edit"
+  element={
+    <ProtectedRoute allowedRoles={["admin","manager","employee"]}>
+      <EditProfile />
+    </ProtectedRoute>
+  }
+/>
 
+
+<Route
+            path="/settings"
+            element={
+              <ProtectedRoute allowedRoles={["admin","manager","employee"]}>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
           {/* FALLBACK */}
           <Route path="*" element={<Navigate to="/" />} />
 

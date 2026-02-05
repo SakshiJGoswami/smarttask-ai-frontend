@@ -1,26 +1,24 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
-
-/* ---------------- PAGE ---------------- */
 
 export default function ProjectDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   return (
     <DashboardLayout role="manager">
-
-      {/* HEADER */}
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold mb-1">
-          Project Details
-        </h1>
-        <p className="text-sm text-gray-400">
+        <h1 className="text-2xl font-semibold mb-1">Project Details</h1>
+        <p className="text-sm text-lightMuted dark:text-gray-400">
           Project ID: {id}
         </p>
       </div>
 
-      {/* DETAILS */}
-      <div className="bg-card backdrop-blur-glass border border-border rounded-2xl p-6 shadow-glass space-y-6">
+      <div className="
+        bg-lightSurface border border-lightBorder
+        dark:bg-card dark:border-border
+        rounded-2xl p-6 space-y-6
+      ">
         <DetailRow label="Project Name" value="SmartTask AI" />
         <DetailRow label="Manager" value="John Doe" />
         <DetailRow label="Status" value="On Track" />
@@ -30,12 +28,22 @@ export default function ProjectDetail() {
           value="An intelligent task and project management system with AI-powered insights."
         />
 
-        {/* ACTIONS (UI ONLY) */}
         <div className="flex gap-4 pt-4">
-          <button className="px-4 py-2 rounded-lg bg-primary text-white">
+          <button
+            onClick={() => navigate("/tasks")}
+            className="px-4 py-2 rounded-lg bg-primary text-white"
+          >
             View Tasks
           </button>
-          <button className="px-4 py-2 rounded-lg bg-card border border-border">
+
+          <button
+            onClick={() => navigate(`/projects/${id}/edit`)}
+            className="
+              px-4 py-2 rounded-lg
+              bg-lightCard text-lightText
+              dark:bg-card dark:text-gray-300
+            "
+          >
             Edit Project
           </button>
         </div>
@@ -44,12 +52,10 @@ export default function ProjectDetail() {
   );
 }
 
-/* ---------------- COMPONENT ---------------- */
-
 function DetailRow({ label, value }) {
   return (
-    <div className="flex justify-between border-b border-border pb-3">
-      <span className="text-gray-400">{label}</span>
+    <div className="flex justify-between border-b border-lightBorder dark:border-border pb-3">
+      <span className="text-lightMuted dark:text-gray-400">{label}</span>
       <span className="font-medium">{value}</span>
     </div>
   );

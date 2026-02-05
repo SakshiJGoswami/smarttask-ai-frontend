@@ -6,7 +6,7 @@ export default function ProtectedRoute({ allowedRoles, children }) {
 
   // ❌ Not logged in
   if (!user) {
-    return <Navigate to="/" replace />; // LOGIN PAGE
+    return <Navigate to="/" replace />;
   }
 
   // ❌ Role not allowed

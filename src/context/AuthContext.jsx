@@ -4,28 +4,25 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
-    return token ? { token, role } : null;
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
   });
 
-  const login = (email, password) => {
-    // 🔴 MOCK LOGIN (replace with API later)
-    let role = "employee";
-    if (email.includes("admin")) role = "admin";
-    else if (email.includes("manager")) role = "manager";
-
+  // ✅ login now accepts USER OBJECT
+  const login = (userData) => {
     const fakeToken = "jwt_token_example";
 
-    localStorage.setItem("token", fakeToken);
-    localStorage.setItem("role", role);
+    const userWithToken = {
+      ...userData,
+      token: fakeToken,
+    };
 
-    setUser({ token: fakeToken, role });
-    return role;
+    localStorage.setItem("user", JSON.stringify(userWithToken));
+    setUser(userWithToken);
   };
 
   const logout = () => {
-    localStorage.clear();
+    localStorage.removeItem("user");
     setUser(null);
   };
 

@@ -1,8 +1,30 @@
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleEditProfile = () => {
+    navigate("/profile/edit");
+  };
+
+  const handleChangePassword = () => {
+    navigate("/profile/change-password");
+  };
+
+  const handleDeactivateAccount = () => {
+    const confirmDeactivate = window.confirm(
+      "Are you sure you want to deactivate your account?"
+    );
+
+    if (confirmDeactivate) {
+      logout();
+      alert("Account deactivated (frontend demo)");
+      navigate("/");
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -11,14 +33,17 @@ export default function Profile() {
         {/* HEADER */}
         <div>
           <h1 className="text-2xl font-semibold mb-1">My Profile</h1>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-lightMuted dark:text-gray-400">
             View and manage your account information
           </p>
         </div>
 
         {/* PROFILE CARD */}
-        <div className="bg-card border border-border rounded-2xl p-6 flex gap-6 items-center shadow-glass">
-
+        <div className="
+          bg-lightSurface border border-lightBorder
+          dark:bg-card dark:border-border
+          rounded-2xl p-6 flex gap-6 items-center
+        ">
           {/* AVATAR */}
           <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-3xl font-bold text-white">
             {user?.name?.charAt(0) || "U"}
@@ -29,11 +54,15 @@ export default function Profile() {
             <h2 className="text-xl font-semibold">
               {user?.name || "User Name"}
             </h2>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-lightMuted dark:text-gray-400">
               {user?.email || "user@email.com"}
             </p>
 
-            <span className="inline-block mt-2 px-3 py-1 text-xs rounded-full bg-surface border border-border">
+            <span className="
+              inline-block mt-2 px-3 py-1 text-xs rounded-full
+              bg-primary/10 text-primary
+              dark:bg-surface dark:text-gray-300
+            ">
               Role: {user?.role}
             </span>
           </div>
@@ -43,7 +72,11 @@ export default function Profile() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
           {/* ACCOUNT INFO */}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-glass">
+          <div className="
+            bg-lightSurface border border-lightBorder
+            dark:bg-card dark:border-border
+            rounded-2xl p-6
+          ">
             <h3 className="font-semibold mb-4">Account Information</h3>
 
             <ProfileRow label="Full Name" value={user?.name} />
@@ -53,13 +86,20 @@ export default function Profile() {
           </div>
 
           {/* SECURITY */}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-glass">
+          <div className="
+            bg-lightSurface border border-lightBorder
+            dark:bg-card dark:border-border
+            rounded-2xl p-6
+          ">
             <h3 className="font-semibold mb-4">Security</h3>
 
             <ProfileRow label="Password" value="********" />
             <ProfileRow label="2FA" value="Disabled" />
 
-            <button className="mt-4 px-4 py-2 bg-primary rounded-xl text-white text-sm">
+            <button
+              onClick={handleChangePassword}
+              className="mt-4 px-6 py-2 rounded-xl bg-primary text-white"
+            >
               Change Password
             </button>
           </div>
@@ -67,14 +107,24 @@ export default function Profile() {
 
         {/* ACTIONS */}
         <div className="flex gap-4">
-          <button className="px-6 py-2 rounded-xl bg-primary text-white">
+          <button
+            onClick={handleEditProfile}
+            className="px-6 py-2 rounded-xl bg-primary text-white"
+          >
             Edit Profile
           </button>
-          <button className="px-6 py-2 rounded-xl bg-red-500/10 text-red-400">
+
+          <button
+            onClick={handleDeactivateAccount}
+            className="
+              px-6 py-2 rounded-xl
+              bg-red-100 text-red-600
+              dark:bg-red-500/20 dark:text-red-400
+            "
+          >
             Deactivate Account
           </button>
         </div>
-
       </div>
     </DashboardLayout>
   );
@@ -84,8 +134,10 @@ export default function Profile() {
 
 function ProfileRow({ label, value }) {
   return (
-    <div className="flex justify-between items-center py-2 border-b border-border last:border-none">
-      <span className="text-sm text-gray-400">{label}</span>
+    <div className="flex justify-between items-center py-2 border-b border-lightBorder dark:border-border last:border-none">
+      <span className="text-sm text-lightMuted dark:text-gray-400">
+        {label}
+      </span>
       <span className="text-sm font-medium">
         {value || "-"}
       </span>
