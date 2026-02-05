@@ -1,12 +1,14 @@
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
-    <DashboardLayout role="manager">
+    <DashboardLayout>
       <div className="mb-8">
         <h1 className="text-2xl font-semibold mb-1">Project Details</h1>
         <p className="text-sm text-lightMuted dark:text-gray-400">
@@ -14,11 +16,7 @@ export default function ProjectDetail() {
         </p>
       </div>
 
-      <div className="
-        bg-lightSurface border border-lightBorder
-        dark:bg-card dark:border-border
-        rounded-2xl p-6 space-y-6
-      ">
+      <div className="bg-lightSurface border border-lightBorder dark:bg-card dark:border-border rounded-2xl p-6 space-y-6">
         <DetailRow label="Project Name" value="SmartTask AI" />
         <DetailRow label="Manager" value="John Doe" />
         <DetailRow label="Status" value="On Track" />
@@ -28,6 +26,20 @@ export default function ProjectDetail() {
           value="An intelligent task and project management system with AI-powered insights."
         />
 
+        {/* ✅ ASSIGNED TASKS */}
+        <div>
+          <h3 className="font-semibold mb-3">Assigned Tasks</h3>
+          <ul className="space-y-2 text-sm">
+            <li className="bg-lightCard dark:bg-surface border border-lightBorder dark:border-border p-3 rounded-lg">
+              Design Dashboard UI – <span className="text-primary">Employee</span>
+            </li>
+            <li className="bg-lightCard dark:bg-surface border border-lightBorder dark:border-border p-3 rounded-lg">
+              Fix Auth Bugs – <span className="text-primary">Manager</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* ACTIONS */}
         <div className="flex gap-4 pt-4">
           <button
             onClick={() => navigate("/tasks")}
@@ -36,16 +48,15 @@ export default function ProjectDetail() {
             View Tasks
           </button>
 
-          <button
-            onClick={() => navigate(`/projects/${id}/edit`)}
-            className="
-              px-4 py-2 rounded-lg
-              bg-lightCard text-lightText
-              dark:bg-card dark:text-gray-300
-            "
-          >
-            Edit Project
-          </button>
+          {/* 🔐 ROLE-BASED */}
+          {user.role !== "employee" && (
+            <button
+              onClick={() => navigate(`/projects/${id}/edit`)}
+              className="px-4 py-2 rounded-lg bg-lightCard text-lightText dark:bg-card dark:text-gray-300"
+            >
+              Edit Project
+            </button>
+          )}
         </div>
       </div>
     </DashboardLayout>

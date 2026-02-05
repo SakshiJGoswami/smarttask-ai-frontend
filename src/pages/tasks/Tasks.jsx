@@ -1,13 +1,45 @@
 import { Link } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
+import { useAuth } from "../../context/AuthContext";
+
+/* ---------------- MOCK TASKS ---------------- */
 
 const tasks = [
-  { id: 1, title: "Design Dashboard UI", status: "In Progress", priority: "High", due: "Today" },
-  { id: 2, title: "Fix Auth Bugs", status: "Pending", priority: "Medium", due: "Tomorrow" },
-  { id: 3, title: "Write API Documentation", status: "Completed", priority: "Low", due: "Yesterday" },
+  {
+    id: 1,
+    title: "Design Dashboard UI",
+    status: "In Progress",
+    priority: "High",
+    due: "Today",
+    assignedTo: "employee", // employee role
+  },
+  {
+    id: 2,
+    title: "Fix Auth Bugs",
+    status: "Pending",
+    priority: "Medium",
+    due: "Tomorrow",
+    assignedTo: "manager",
+  },
+  {
+    id: 3,
+    title: "Write API Documentation",
+    status: "Completed",
+    priority: "Low",
+    due: "Yesterday",
+    assignedTo: "employee",
+  },
 ];
 
 export default function Tasks() {
+  const { user } = useAuth();
+
+  // 🔐 ROLE-BASED VISIBILITY
+  const visibleTasks =
+    user.role === "employee"
+      ? tasks.filter((t) => t.assignedTo === "employee")
+      : tasks;
+
   return (
     <DashboardLayout>
       <div className="mb-8">
@@ -17,13 +49,9 @@ export default function Tasks() {
         </p>
       </div>
 
-      <div className="
-        bg-lightSurface border border-lightBorder
-        dark:bg-card dark:border-border
-        rounded-2xl p-6
-      ">
+      <div className="bg-lightSurface border border-lightBorder dark:bg-card dark:border-border rounded-2xl p-6">
         <div className="space-y-4">
-          {tasks.map((task) => (
+          {visibleTasks.map((task) => (
             <TaskRow key={task.id} {...task} />
           ))}
         </div>
@@ -50,12 +78,7 @@ function TaskRow({ id, title, status, priority, due }) {
   return (
     <Link
       to={`/tasks/${id}`}
-      className="
-        flex justify-between items-center
-        bg-lightCard border border-lightBorder
-        dark:bg-surface dark:border-border
-        rounded-xl p-4 hover:border-primary transition
-      "
+      className="flex justify-between items-center bg-lightCard border border-lightBorder dark:bg-surface dark:border-border rounded-xl p-4 hover:border-primary transition"
     >
       <div>
         <p className="font-medium">{title}</p>
