@@ -11,6 +11,9 @@ export default function Settings() {
     localStorage.getItem("theme") === "dark"
   );
 
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+
   /* Ensure theme is applied on page load */
   useEffect(() => {
     if (darkMode) {
@@ -21,9 +24,19 @@ export default function Settings() {
   }, [darkMode]);
 
   const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    localStorage.setItem("theme", newMode ? "dark" : "light");
+    setDarkMode((prev) => !prev);
+    setSuccess("");
+  };
+
+  const handleSaveSettings = () => {
+    setLoading(true);
+
+    // ⏳ Fake async save
+    setTimeout(() => {
+      localStorage.setItem("theme", darkMode ? "dark" : "light");
+      setLoading(false);
+      setSuccess("Settings saved successfully");
+    }, 1000);
   };
 
   const handleEditProfile = () => navigate("/profile/edit");
@@ -44,6 +57,7 @@ export default function Settings() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl space-y-8">
+
         {/* PAGE TITLE */}
         <div>
           <h1 className="text-2xl font-semibold">Settings</h1>
@@ -51,6 +65,13 @@ export default function Settings() {
             Manage your account preferences and application settings
           </p>
         </div>
+
+        {/* SUCCESS MESSAGE */}
+        {success && (
+          <p className="text-sm text-green-600 dark:text-green-400">
+            {success}
+          </p>
+        )}
 
         {/* ACCOUNT SETTINGS */}
         <div className="
@@ -109,7 +130,8 @@ export default function Settings() {
               type="checkbox"
               checked={darkMode}
               onChange={toggleDarkMode}
-              className="w-5 h-5 cursor-pointer accent-primary"
+              disabled={loading}
+              className="w-5 h-5 cursor-pointer accent-primary disabled:opacity-60"
             />
           </div>
 
@@ -122,6 +144,33 @@ export default function Settings() {
               Enabled
             </span>
           </div>
+        </div>
+
+        {/* ACTIONS */}
+        <div className="flex gap-4">
+          <button
+            onClick={handleSaveSettings}
+            disabled={loading}
+            className="
+              px-6 py-2 rounded-xl
+              bg-primary text-white
+              disabled:opacity-60
+            "
+          >
+            {loading ? "Saving..." : "Save Settings"}
+          </button>
+
+          <button
+            onClick={() => window.location.reload()}
+            disabled={loading}
+            className="
+              px-6 py-2 rounded-xl
+              bg-lightCard
+              disabled:opacity-60
+            "
+          >
+            Cancel
+          </button>
         </div>
 
         {/* DANGER ZONE */}

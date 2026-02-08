@@ -12,46 +12,138 @@ import {
 } from "recharts";
 import AIInsightCard from "../../components/ai/AIInsightCard";
 import { useAIInsights } from "../../components/ai/useAIInsights";
-
-/* -------------------- DATA -------------------- */
-
-const performanceData = [
-  { month: "Jan", tasks: 400 },
-  { month: "Feb", tasks: 600 },
-  { month: "Mar", tasks: 750 },
-  { month: "Apr", tasks: 900 },
-  { month: "May", tasks: 1100 },
-  { month: "Jun", tasks: 980 },
-  { month: "Jul", tasks: 1200 },
-];
-
-const taskDistribution = [
-  { name: "Development", value: 45, color: "#7C7CFF" },
-  { name: "Design", value: 28, color: "#22d3ee" },
-  { name: "Marketing", value: 12, color: "#f472b6" },
-];
+import { useTasks } from "../../context/TaskContext";
+import { useProjects } from "../../context/ProjectContext";
 
 /* -------------------- PAGE -------------------- */
 
 export default function AdminDashboard() {
   const aiInsights = useAIInsights("admin", "dashboard");
+  const { tasks } = useTasks();
+  const { projects } = useProjects();
+
+  /* -------------------- BASIC STATS -------------------- */
+
+  const totalProjects = projects.length;
+  const totalTasks = tasks.length;
+
+  const completedTasks = tasks.filter(
+    (t) => t.status === "Completed"
+  ).length;
+
+  const pendingTasks = totalTasks - completedTasks;
+
+  const productivity =
+    totalTasks === 0
+      ? "0%"
+      : `${Math.round((completedTasks / totalTasks) * 100)}%`;
+
+  /* -------------------- ADVANCED ANALYTICS -------------------- */
+
+  // Frontend-safe date simulation
+  const now = new Date();
+  const lastWeek = new Date();
+  lastWeek.setDate(now.getDate() - 7);
+
+  const weeklyCompleted = tasks.filter(
+    (t) =>
+      t.status === "Completed" &&
+      t.completedAt &&
+      new Date(t.completedAt) >= lastWeek
+  ).length;
+
+  const weeklyPending = tasks.filter(
+    (t) => t.status !== "Completed"
+  ).length;
+
+  const overdueTasks = tasks.filter(
+    (t) =>
+      t.due &&
+      new Date(t.due) < now &&
+      t.status !== "Completed"
+  ).length;
+
+  const onHoldProjects = projects.filter(
+    (p) => p.status === "On Hold"
+  ).length;
+
+  const trendUp = weeklyCompleted > weeklyPending;
+
+  /* -------------------- PIE DATA -------------------- */
+
+  const taskDistribution = [
+    { name: "Completed", value: completedTasks, color: "#22c55e" },
+    { name: "Pending", value: pendingTasks, color: "#facc15" },
+  ];
+
+  /* -------------------- LINE CHART DATA -------------------- */
+
+  const performanceData = [
+    { label: "Jan", value: Math.max(0, totalTasks - 6) },
+    { label: "Feb", value: Math.max(0, totalTasks - 5) },
+    { label: "Mar", value: Math.max(0, totalTasks - 4) },
+    { label: "Apr", value: Math.max(0, totalTasks - 3) },
+    { label: "May", value: Math.max(0, totalTasks - 2) },
+    { label: "Jun", value: Math.max(0, totalTasks - 1) },
+    { label: "Jul", value: totalTasks },
+  ];
 
   return (
     <DashboardLayout>
       {/* HEADER */}
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold mb-1">Admin Dashboard</h1>
+        <h1 className="text-2xl font-semibold mb-1">
+          Admin Dashboard
+        </h1>
         <p className="text-sm text-lightMuted dark:text-gray-400">
-          Welcome back, managing the SmartTask AI ecosystem.
+          System-wide overview and advanced analytics
         </p>
       </div>
 
-      {/* STATS CARDS */}
+      {/* CORE STATS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Projects" value="142" note="+12.5%" accent="text-cyan-600 dark:text-cyan-400" />
-        <StatCard title="Completed Tasks" value="2,854" note="This month" accent="text-purple-600 dark:text-purple-400" />
-        <StatCard title="Team Productivity" value="94.2%" note="High" accent="text-green-600 dark:text-green-400" />
-        <StatCard title="Support Tickets" value="12" note="2 pending" accent="text-red-600 dark:text-red-400" />
+        <StatCard title="Total Projects" value={totalProjects} />
+        <StatCard title="Total Tasks" value={totalTasks} />
+        <StatCard title="Completed Tasks" value={completedTasks} />
+        <StatCard title="Productivity" value={productivity} />
+      </div>
+
+      {/* ADVANCED ANALYTICS */}
+      <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Completed (This Week)"
+          value={weeklyCompleted}
+          accent="text-green-500"
+        />
+        <StatCard
+          title="Pending Tasks"
+          value={weeklyPending}
+          accent="text-yellow-500"
+        />
+        <StatCard
+          title="Overdue Tasks"
+          value={overdueTasks}
+          accent="text-red-500"
+        />
+        <StatCard
+          title="Projects On Hold"
+          value={onHoldProjects}
+          accent="text-red-500"
+        />
+      </div>
+
+      {/* TREND INDICATOR */}
+      <div className="mt-6 p-5 rounded-2xl bg-lightSurface border dark:bg-card">
+        <p className="text-sm">
+          📈 Weekly Productivity Trend:{" "}
+          <strong
+            className={
+              trendUp ? "text-green-500" : "text-red-500"
+            }
+          >
+            {trendUp ? "Improving" : "Needs Attention"}
+          </strong>
+        </p>
       </div>
 
       {/* AI INSIGHTS */}
@@ -61,207 +153,60 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* ANALYTICS */}
+      {/* CHARTS */}
       <div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* PERFORMANCE TRENDS */}
-        <div className="
-          lg:col-span-2
-          bg-lightSurface border border-lightBorder
-          dark:bg-card dark:border-border
-          rounded-2xl p-6
-        ">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h2 className="text-lg font-semibold">Performance Trends</h2>
-              <p className="text-sm text-lightMuted dark:text-gray-400">
-                Monthly task completion analytics
-              </p>
-            </div>
-
-            <div className="flex gap-2 text-sm">
-              <button className="
-                px-4 py-1 rounded-lg
-                bg-lightCard text-lightText
-                dark:bg-card dark:border-border
-              ">
-                Week
-              </button>
-              <button className="px-4 py-1 rounded-lg bg-primary text-white">
-                Month
-              </button>
-            </div>
-          </div>
-
+        <div className="lg:col-span-2 bg-lightSurface border rounded-2xl p-6">
+          <h2 className="text-lg font-semibold mb-4">
+            Monthly Task Growth (Simulated)
+          </h2>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={performanceData}>
-                <XAxis dataKey="month" stroke="#64748B" />
-                <YAxis stroke="#64748B" />
+                <XAxis dataKey="label" />
+                <YAxis />
                 <Tooltip />
                 <Line
                   type="monotone"
-                  dataKey="tasks"
-                  stroke="#7C7CFF"
+                  dataKey="value"
+                  stroke="#6366f1"
                   strokeWidth={3}
-                  dot={false}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* TASK DISTRIBUTION */}
-        <div className="
-          bg-lightSurface border border-lightBorder
-          dark:bg-card dark:border-border
-          rounded-2xl p-6
-        ">
-          <h2 className="text-lg font-semibold mb-1">Task Distribution</h2>
-          <p className="text-sm text-lightMuted dark:text-gray-400 mb-4">
-            Category wise breakdown
-          </p>
-
-          <div className="flex justify-center items-center h-56 relative">
-            <PieChart width={220} height={220}>
-              <Pie
-                data={taskDistribution}
-                dataKey="value"
-                innerRadius={70}
-                outerRadius={100}
-                paddingAngle={4}
-              >
-                {taskDistribution.map((entry, index) => (
-                  <Cell key={index} fill={entry.color} />
-                ))}
-              </Pie>
-            </PieChart>
-
-            <div className="absolute text-center">
-              <p className="text-2xl font-semibold">82%</p>
-              <p className="text-xs text-lightMuted dark:text-gray-400">
-                Total Cap
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-3">
-            {taskDistribution.map((item, index) => (
-              <div key={index} className="flex justify-between text-sm">
-                <span className="flex items-center gap-2">
-                  <span
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  {item.name}
-                </span>
-                <span>{item.value}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* RECENT PROJECT MILESTONES */}
-      <div className="
-        mt-10 bg-lightSurface border border-lightBorder
-        dark:bg-card dark:border-border
-        rounded-2xl p-6
-      ">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold">Recent Project Milestones</h2>
-          <button className="text-sm text-primary hover:underline">
-            View all
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-lightMuted dark:text-gray-400 border-b border-lightBorder dark:border-border">
-              <tr>
-                <th className="text-left py-3">Project Name</th>
-                <th className="text-left py-3">Team Lead</th>
-                <th className="text-left py-3">Deadline</th>
-                <th className="text-left py-3">Progress</th>
-                <th className="text-left py-3">Status</th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-lightBorder dark:divide-border">
-              <ProjectRow
-                name="SmartApp Dashboard"
-                lead="John Doe"
-                deadline="Oct 24, 2024"
-                progress={75}
-                status="On Track"
-                statusColor="bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400"
-              />
-              <ProjectRow
-                name="AI Engine v2.0"
-                lead="Sarah Chen"
-                deadline="Nov 12, 2024"
-                progress={45}
-                status="In Review"
-                statusColor="bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400"
-              />
-              <ProjectRow
-                name="Marketing Portal"
-                lead="Mike Ross"
-                deadline="Oct 30, 2024"
-                progress={90}
-                status="Almost Done"
-                statusColor="bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-400"
-              />
-            </tbody>
-          </table>
+        <div className="bg-lightSurface border rounded-2xl p-6">
+          <h2 className="text-lg font-semibold mb-4">
+            Task Distribution
+          </h2>
+          <PieChart width={220} height={220}>
+            <Pie
+              data={taskDistribution}
+              dataKey="value"
+              innerRadius={70}
+              outerRadius={100}
+            >
+              {taskDistribution.map((item, i) => (
+                <Cell key={i} fill={item.color} />
+              ))}
+            </Pie>
+          </PieChart>
         </div>
       </div>
     </DashboardLayout>
   );
 }
 
-/* -------------------- COMPONENTS -------------------- */
+/* -------------------- COMPONENT -------------------- */
 
-function StatCard({ title, value, note, accent }) {
+function StatCard({ title, value, accent = "text-primary" }) {
   return (
-    <div className="
-      bg-lightSurface border border-lightBorder
-      dark:bg-card dark:border-border
-      rounded-2xl p-5
-    ">
-      <p className="text-sm text-lightMuted dark:text-gray-400 mb-2">
-        {title}
-      </p>
+    <div className="bg-lightSurface border rounded-2xl p-5">
+      <p className="text-sm text-lightMuted mb-2">{title}</p>
       <h2 className={`text-3xl font-semibold ${accent}`}>
         {value}
       </h2>
-      <p className="text-xs text-lightMuted dark:text-gray-400 mt-2">
-        {note}
-      </p>
     </div>
-  );
-}
-
-function ProjectRow({ name, lead, deadline, progress, status, statusColor }) {
-  return (
-    <tr>
-      <td className="py-4">{name}</td>
-      <td className="py-4">{lead}</td>
-      <td className="py-4 text-lightMuted dark:text-gray-400">{deadline}</td>
-
-      <td className="py-4 w-48">
-        <div className="h-2 bg-lightBorder dark:bg-border rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </td>
-
-      <td className="py-4">
-        <span className={`px-3 py-1 rounded-full text-xs ${statusColor}`}>
-          {status}
-        </span>
-      </td>
-    </tr>
   );
 }

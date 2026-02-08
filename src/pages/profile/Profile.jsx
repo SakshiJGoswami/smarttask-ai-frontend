@@ -1,7 +1,7 @@
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-
+import ProfileHeader from "./ProfileHeader";
 export default function Profile() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -10,16 +10,12 @@ export default function Profile() {
     navigate("/profile/edit");
   };
 
-  const handleChangePassword = () => {
-    navigate("/profile/change-password");
-  };
-
   const handleDeactivateAccount = () => {
-    const confirmDeactivate = window.confirm(
+    const confirmed = window.confirm(
       "Are you sure you want to deactivate your account?"
     );
 
-    if (confirmDeactivate) {
+    if (confirmed) {
       logout();
       alert("Account deactivated (frontend demo)");
       navigate("/");
@@ -30,20 +26,17 @@ export default function Profile() {
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-8">
 
-        {/* HEADER */}
-        <div>
-          <h1 className="text-2xl font-semibold mb-1">My Profile</h1>
-          <p className="text-sm text-lightMuted dark:text-gray-400">
-            View and manage your account information
-          </p>
-        </div>
+        {/* ✅ PROFILE HEADER (REUSABLE COMPONENT) */}
+        <ProfileHeader user={user} />
 
         {/* PROFILE CARD */}
-        <div className="
-          bg-lightSurface border border-lightBorder
-          dark:bg-card dark:border-border
-          rounded-2xl p-6 flex gap-6 items-center
-        ">
+        <div
+          className="
+            bg-lightSurface border border-lightBorder
+            dark:bg-card dark:border-border
+            rounded-2xl p-6 flex gap-6 items-center
+          "
+        >
           {/* AVATAR */}
           <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-3xl font-bold text-white">
             {user?.name?.charAt(0) || "U"}
@@ -58,11 +51,13 @@ export default function Profile() {
               {user?.email || "user@email.com"}
             </p>
 
-            <span className="
-              inline-block mt-2 px-3 py-1 text-xs rounded-full
-              bg-primary/10 text-primary
-              dark:bg-surface dark:text-gray-300
-            ">
+            <span
+              className="
+                inline-block mt-2 px-3 py-1 text-xs rounded-full
+                bg-primary/10 text-primary
+                dark:bg-surface dark:text-gray-300
+              "
+            >
               Role: {user?.role}
             </span>
           </div>
@@ -72,12 +67,16 @@ export default function Profile() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
           {/* ACCOUNT INFO */}
-          <div className="
-            bg-lightSurface border border-lightBorder
-            dark:bg-card dark:border-border
-            rounded-2xl p-6
-          ">
-            <h3 className="font-semibold mb-4">Account Information</h3>
+          <div
+            className="
+              bg-lightSurface border border-lightBorder
+              dark:bg-card dark:border-border
+              rounded-2xl p-6
+            "
+          >
+            <h3 className="font-semibold mb-4">
+              Account Information
+            </h3>
 
             <ProfileRow label="Full Name" value={user?.name} />
             <ProfileRow label="Email" value={user?.email} />
@@ -85,23 +84,22 @@ export default function Profile() {
             <ProfileRow label="Status" value="Active" />
           </div>
 
-          {/* SECURITY */}
-          <div className="
-            bg-lightSurface border border-lightBorder
-            dark:bg-card dark:border-border
-            rounded-2xl p-6
-          ">
+          {/* SECURITY (VIEW ONLY) */}
+          <div
+            className="
+              bg-lightSurface border border-lightBorder
+              dark:bg-card dark:border-border
+              rounded-2xl p-6
+            "
+          >
             <h3 className="font-semibold mb-4">Security</h3>
 
             <ProfileRow label="Password" value="********" />
             <ProfileRow label="2FA" value="Disabled" />
 
-            <button
-              onClick={handleChangePassword}
-              className="mt-4 px-6 py-2 rounded-xl bg-primary text-white"
-            >
-              Change Password
-            </button>
+            <p className="text-xs text-lightMuted dark:text-gray-400 mt-4">
+              Password change will be handled via backend in future.
+            </p>
           </div>
         </div>
 

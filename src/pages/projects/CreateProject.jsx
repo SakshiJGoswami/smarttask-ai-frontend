@@ -1,63 +1,82 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { useProjects } from "../../context/ProjectContext";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
+import { useProjects } from "../../context/ProjectContext";
 
-export default function EditProject() {
-  const { id } = useParams();
+/* -------------------- PAGE -------------------- */
+
+export default function CreateProject() {
   const navigate = useNavigate();
-  const { projects, updateProject } = useProjects();
+  const { addProject } = useProjects();
 
-  const existingProject = projects.find((p) => p.id === id);
+  const [form, setForm] = useState({
+    name: "",
+    status: "Active",
+    description: "",
+  });
 
-  const [form, setForm] = useState(existingProject || {});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  if (!existingProject) {
-    return (
-      <DashboardLayout>
-        <p>Project not found</p>
-      </DashboardLayout>
-    );
-  }
+  /* -------------------- HANDLERS -------------------- */
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError("");
   };
 
-  const handleSave = () => {
-    if (!form.name?.trim()) {
-      setError("Project name cannot be empty");
+  const handleSubmit = () => {
+    if (!form.name.trim()) {
+      setError("Project name is required");
+      return;
+    }
+
+    if (form.name.trim().length < 3) {
+      setError("Project name must be at least 3 characters");
       return;
     }
 
     setLoading(true);
 
     setTimeout(() => {
-      updateProject(id, form);
+      addProject({
+        ...form,
+        name: form.name.trim(),
+        description: form.description.trim(),
+        status: form.status || "Active",
+        createdAt: new Date().toISOString(),
+      });
+
       setLoading(false);
-      navigate(`/projects/${id}`);
-    }, 1000);
+      navigate("/projects");
+    }, 600);
   };
 
   return (
     <DashboardLayout>
       <div className="max-w-xl">
-        <h1 className="text-2xl font-semibold mb-6">Edit Project</h1>
+        <h1 className="text-2xl font-semibold mb-6">
+          Create Project
+        </h1>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <p className="text-sm text-red-600 mb-4">
+            {error}
+          </p>
+        )}
 
         <div className="space-y-4">
+          {/* NAME */}
           <input
             name="name"
-            value={form.name || ""}
+            placeholder="Project name"
+            value={form.name}
             onChange={handleChange}
             disabled={loading}
             className="w-full px-4 py-2 border rounded-xl"
           />
 
+          {/* STATUS */}
           <select
             name="status"
             value={form.status}
@@ -65,26 +84,30 @@ export default function EditProject() {
             disabled={loading}
             className="w-full px-4 py-2 border rounded-xl"
           >
-            <option>Active</option>
-            <option>Completed</option>
-            <option>On Hold</option>
+            <option value="Active">Active</option>
+            <option value="Completed">Completed</option>
+            <option value="On Hold">On Hold</option>
           </select>
 
+          {/* DESCRIPTION */}
           <textarea
             name="description"
-            value={form.description || ""}
+            placeholder="Project description (optional)"
+            value={form.description}
             onChange={handleChange}
             disabled={loading}
+            rows={4}
             className="w-full px-4 py-2 border rounded-xl"
           />
 
+          {/* ACTIONS */}
           <div className="flex gap-3 pt-4">
             <button
-              onClick={handleSave}
+              onClick={handleSubmit}
               disabled={loading}
               className="px-6 py-2 bg-primary text-white rounded-xl"
             >
-              {loading ? "Saving..." : "Save Changes"}
+              {loading ? "Creating..." : "Create Project"}
             </button>
 
             <button

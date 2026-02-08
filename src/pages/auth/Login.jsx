@@ -10,31 +10,48 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const handleLogin = () => {
     if (!email || !password) {
-      alert("Please enter email and password");
+      setError("Email and password are required");
       return;
     }
 
-    try {
-      const result = loginUser(email, password);
-      login(result.user);
-      navigate(`/${result.role}`);
-    } catch (err) {
-      alert(err.message);
-    }
+    setError("");
+    setLoading(true);
+
+    // ⏳ fake async login
+    setTimeout(() => {
+      try {
+        const result = loginUser(email, password);
+
+        // save user in context
+        login(result.user);
+
+        // redirect based on role
+        navigate(`/${result.role}`);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }, 1000);
   };
 
   return (
     <div className="min-h-screen bg-lightBg dark:bg-bg flex items-center justify-center px-4">
-      <div className="
-        w-full max-w-5xl
-        bg-lightSurface border border-lightBorder
-        dark:bg-card dark:border-border
-        rounded-2xl
-        grid grid-cols-1 md:grid-cols-2 overflow-hidden
-      ">
-        {/* LEFT SIDE (DARK BRAND PANEL – UNCHANGED) */}
+      <div
+        className="
+          w-full max-w-5xl
+          bg-lightSurface border border-lightBorder
+          dark:bg-card dark:border-border
+          rounded-2xl
+          grid grid-cols-1 md:grid-cols-2 overflow-hidden
+        "
+      >
+        {/* LEFT BRAND PANEL */}
         <div className="hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-[#1a1f3c] to-[#0b1020] text-white">
           <div>
             <div className="flex items-center gap-2 mb-10">
@@ -56,12 +73,19 @@ export default function Login() {
           </div>
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* RIGHT LOGIN FORM */}
         <div className="p-8 md:p-12">
           <h2 className="text-2xl font-semibold mb-2">Welcome Back</h2>
           <p className="text-sm text-lightMuted dark:text-gray-400 mb-8">
             Enter your credentials to access your dashboard.
           </p>
+
+          {/* ERROR */}
+          {error && (
+            <p className="mb-4 text-sm text-red-600 dark:text-red-400">
+              {error}
+            </p>
+          )}
 
           <div className="mb-5">
             <label className="text-sm mb-1 block text-lightMuted dark:text-gray-400">
@@ -71,12 +95,14 @@ export default function Login() {
               type="email"
               placeholder="you@example.com"
               value={email}
+              disabled={loading}
               onChange={(e) => setEmail(e.target.value)}
               className="
                 w-full px-4 py-3 rounded-xl
                 bg-lightBg text-lightText border border-lightBorder
                 dark:bg-surface dark:text-white dark:border-border
                 outline-none focus:border-primary
+                disabled:opacity-60
               "
             />
           </div>
@@ -89,21 +115,28 @@ export default function Login() {
               type="password"
               placeholder="••••••••"
               value={password}
+              disabled={loading}
               onChange={(e) => setPassword(e.target.value)}
               className="
                 w-full px-4 py-3 rounded-xl
                 bg-lightBg text-lightText border border-lightBorder
                 dark:bg-surface dark:text-white dark:border-border
                 outline-none focus:border-primary
+                disabled:opacity-60
               "
             />
           </div>
 
           <button
             onClick={handleLogin}
-            className="w-full bg-primary py-3 rounded-xl font-medium text-white mb-6"
+            disabled={loading}
+            className="
+              w-full bg-primary py-3 rounded-xl
+              font-medium text-white mb-6
+              disabled:opacity-60
+            "
           >
-            Log In →
+            {loading ? "Signing in..." : "Log In →"}
           </button>
         </div>
       </div>

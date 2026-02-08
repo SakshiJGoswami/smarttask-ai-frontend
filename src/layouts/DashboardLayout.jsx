@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AIChatPanel from "../components/ai/AIChatPanel";
 import AIFloatingButton from "../components/ai/AIFloatingButton";
 
@@ -9,9 +9,19 @@ const AI_WIDTH = 380;
 
 export default function DashboardLayout({ children }) {
   const { user, logout } = useAuth();
- const role = user?.role?.toLowerCase() || "employee";
- const navigate = useNavigate();
+  const navigate = useNavigate();
   const [openAI, setOpenAI] = useState(false);
+
+  // 🔐 SAFETY: if user missing, kick to login
+  useEffect(() => {
+    if (!user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  if (!user) return null;
+
+  const role = user.role.toLowerCase();
 
   const handleLogout = () => {
     logout();
@@ -60,22 +70,22 @@ export default function DashboardLayout({ children }) {
             Settings
           </NavLink>
 
-       {(role === "admin" || role === "manager") && (
-  <div className="pt-4 mt-4 border-t border-lightBorder dark:border-border">
-    <p className="text-xs uppercase text-lightMuted mb-2">
-      Management
-    </p>
+          {/* MANAGEMENT SECTION */}
+          {(role === "admin" || role === "manager") && (
+            <div className="pt-4 mt-4 border-t border-lightBorder dark:border-border">
+              <p className="text-xs uppercase text-lightMuted mb-2">
+                Management
+              </p>
 
-    <NavLink to={`/${role}/analytics`} className={navStyle}>
-      Analytics
-    </NavLink>
+              <NavLink to={`/${role}/analytics`} className={navStyle}>
+                Analytics
+              </NavLink>
 
-    <NavLink to={`/${role}/team`} className={navStyle}>
-      Team
-    </NavLink>
-  </div>
-)}
-
+              <NavLink to={`/${role}/team`} className={navStyle}>
+                Team
+              </NavLink>
+            </div>
+          )}
         </nav>
 
         {/* LOGOUT */}

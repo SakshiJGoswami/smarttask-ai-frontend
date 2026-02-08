@@ -1,12 +1,23 @@
 import { useState, useEffect } from "react";
-import { Send, X, Trash2 } from "lucide-react";
+import { Send, X, Trash2, Database } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { generateSmartReply, getAutoSuggestion } from "./aiLogic";
+import { useTasks } from "../../context/TaskContext";
+import { useProjects } from "../../context/ProjectContext";
 
 export default function AIChatPanel({ onClose, role }) {
   const location = useLocation();
   const page = location.pathname.replace("/", "") || "dashboard";
+
+  const { tasks } = useTasks();
+  const { projects } = useProjects();
+
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(
+    (t) => t.status === "Completed"
+  ).length;
+  const totalProjects = projects.length;
 
   const STORAGE_KEY = `ai-chat-${page}-${role}`;
   const AUTO_KEY = `ai-auto-${page}-${role}`;
@@ -20,7 +31,7 @@ export default function AIChatPanel({ onClose, role }) {
       : [
           {
             role: "ai",
-            text: `👋 Hi! I’m SmartTask AI. I’ll assist you on ${page}.`,
+            text: `👋 Hi! I’m SmartTask AI. I’ll assist you on ${page} using available task and project data.`,
             confidence: "Low",
           },
         ];
@@ -43,26 +54,16 @@ export default function AIChatPanel({ onClose, role }) {
     const timer = setTimeout(() => {
       setMessages((prev) => [
         ...prev,
-        { role: "ai", ...getAutoSuggestion(page, role) },
+        {
+          role: "ai",
+          ...getAutoSuggestion(page, role),
+        },
       ]);
       localStorage.setItem(AUTO_KEY, "true");
     }, 600);
 
     return () => clearTimeout(timer);
   }, [page, role, AUTO_KEY]);
-
-  /* ---------------- CTRL + K ---------------- */
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.ctrlKey && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
 
   /* ---------------- SEND MESSAGE ---------------- */
 
@@ -74,7 +75,12 @@ export default function AIChatPanel({ onClose, role }) {
     setThinking(true);
 
     setTimeout(() => {
-      const reply = generateSmartReply(text, page, role);
+      const reply = generateSmartReply(
+        text,
+        page,
+        role,
+        { totalTasks, completedTasks, totalProjects }
+      );
       setMessages((prev) => [...prev, { role: "ai", ...reply }]);
       setThinking(false);
     }, 900);
@@ -97,7 +103,7 @@ export default function AIChatPanel({ onClose, role }) {
   const quickQuestions = [
     "What should I prioritize?",
     "Any risks?",
-    "Team performance?",
+    "Project status summary?",
   ];
 
   /* ---------------- UI ---------------- */
@@ -126,7 +132,7 @@ export default function AIChatPanel({ onClose, role }) {
             <div>
               <p className="font-semibold">SmartTask AI</p>
               <p className="text-xs text-green-600 dark:text-green-400">
-                {(role ?? "employee").toUpperCase()}
+                {(role ?? "employee").toUpperCase()} • Context Loaded
               </p>
             </div>
 
@@ -140,6 +146,20 @@ export default function AIChatPanel({ onClose, role }) {
             </div>
           </div>
 
+          {/* CONTEXT SUMMARY */}
+          <div className="px-4 py-3 border-b border-lightBorder dark:border-border text-xs flex gap-3">
+            <div className="flex items-center gap-1">
+              <Database size={12} /> Tasks: {totalTasks}
+            </div>
+            <div>Completed: {completedTasks}</div>
+            <div>Projects: {totalProjects}</div>
+          </div>
+
+          {/* DISCLAIMER */}
+          <div className="px-4 py-2 text-[11px] text-lightMuted border-b">
+            AI provides insights only. It does NOT create, edit, or delete tasks or projects.
+          </div>
+
           {/* CHAT */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((m, i) => (
@@ -148,25 +168,21 @@ export default function AIChatPanel({ onClose, role }) {
                 className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm ${
                   m.role === "user"
                     ? "ml-auto bg-primary text-white"
-                    : `
-                      bg-lightCard text-lightText border border-lightBorder
-                      dark:bg-surface dark:border-border
-                    `
+                    : "bg-lightCard border border-lightBorder dark:bg-surface dark:border-border"
                 }`}
               >
                 {m.text}
 
                 {m.role === "ai" && m.confidence && (
-                  <div className="mt-2 text-xs text-lightMuted dark:text-gray-400">
-                    Confidence:{" "}
-                    <span className="text-primary">{m.confidence}</span>
+                  <div className="mt-2 text-xs text-lightMuted">
+                    Confidence: <span className="text-primary">{m.confidence}</span>
                   </div>
                 )}
               </div>
             ))}
 
             {thinking && (
-              <p className="text-xs text-lightMuted dark:text-gray-400 italic">
+              <p className="text-xs text-lightMuted italic">
                 SmartTask AI is thinking…
               </p>
             )}

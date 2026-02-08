@@ -1,47 +1,30 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { useTasks } from "../../context/TaskContext";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
+import { useTasks } from "../../context/TaskContext";
+import { useProjects } from "../../context/ProjectContext";
+import { useAuth } from "../../context/AuthContext";
 
-export default function EditTask() {
-  const { id } = useParams();
+export default function CreateTask() {
   const navigate = useNavigate();
-  const { tasks, updateTask } = useTasks();
+  const { addTask } = useTasks();
+  const { projects } = useProjects();
+  const { user } = useAuth();
 
-  const existingTask = tasks.find((t) => t.id === id);
+  const role = user?.role || "employee";
 
+  /* -------- FORM STATE -------- */
   const [form, setForm] = useState({
     title: "",
-    status: "In Progress",
+    status: "Pending",
     priority: "Medium",
     due: "",
-    assignedTo: "",
+    assignedTo: "employee",
+    projectId: "",
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  /* -------- LOAD EXISTING TASK -------- */
-  useEffect(() => {
-    if (existingTask) {
-      setForm({
-        title: existingTask.title || "",
-        status: existingTask.status || "In Progress",
-        priority: existingTask.priority || "Medium",
-        due: existingTask.due || "",
-        assignedTo: existingTask.assignedTo || "",
-      });
-    }
-  }, [existingTask]);
-
-  /* -------- TASK NOT FOUND -------- */
-  if (!existingTask) {
-    return (
-      <DashboardLayout>
-        <p className="text-red-500">Task not found</p>
-      </DashboardLayout>
-    );
-  }
 
   /* -------- HANDLERS -------- */
   const handleChange = (e) => {
@@ -49,28 +32,34 @@ export default function EditTask() {
     setError("");
   };
 
-  const handleSave = () => {
+  const handleSubmit = () => {
     if (!form.title.trim()) {
-      setError("Task title cannot be empty");
+      setError("Task title is required");
+      return;
+    }
+
+    if (!form.projectId) {
+      setError("Please select a project");
       return;
     }
 
     setLoading(true);
 
     setTimeout(() => {
-      updateTask(id, {
-        ...existingTask,
+      addTask({
         ...form,
+        createdBy: role,
+        createdAt: new Date().toISOString(),
       });
       setLoading(false);
-      navigate(`/tasks/${id}`);
+      navigate("/tasks");
     }, 600);
   };
 
   return (
     <DashboardLayout>
       <div className="max-w-2xl">
-        <h1 className="text-2xl font-semibold mb-6">Edit Task</h1>
+        <h1 className="text-2xl font-semibold mb-6">Create Task</h1>
 
         <div className="space-y-4">
           {error && (
@@ -82,11 +71,31 @@ export default function EditTask() {
             <label className="text-sm mb-1 block">Title</label>
             <input
               name="title"
+              placeholder="Task title"
               value={form.title}
               onChange={handleChange}
               disabled={loading}
               className="w-full px-4 py-2 rounded-xl border"
             />
+          </div>
+
+          {/* PROJECT */}
+          <div>
+            <label className="text-sm mb-1 block">Project</label>
+            <select
+              name="projectId"
+              value={form.projectId}
+              onChange={handleChange}
+              disabled={loading}
+              className="w-full px-4 py-2 rounded-xl border"
+            >
+              <option value="">Select project</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* STATUS */}
@@ -122,18 +131,22 @@ export default function EditTask() {
             </select>
           </div>
 
-          {/* ASSIGNED TO */}
-          <div>
-            <label className="text-sm mb-1 block">Assigned To</label>
-            <input
-              name="assignedTo"
-              value={form.assignedTo}
-              onChange={handleChange}
-              disabled={loading}
-              className="w-full px-4 py-2 rounded-xl border"
-              placeholder="employee / user id"
-            />
-          </div>
+          {/* ASSIGNED TO (manager/admin only) */}
+          {role !== "employee" && (
+            <div>
+              <label className="text-sm mb-1 block">Assigned To</label>
+              <select
+                name="assignedTo"
+                value={form.assignedTo}
+                onChange={handleChange}
+                disabled={loading}
+                className="w-full px-4 py-2 rounded-xl border"
+              >
+                <option value="employee">Employee</option>
+                <option value="manager">Manager</option>
+              </select>
+            </div>
+          )}
 
           {/* DUE DATE */}
           <div>
@@ -151,11 +164,11 @@ export default function EditTask() {
           {/* ACTIONS */}
           <div className="flex gap-3 pt-4">
             <button
-              onClick={handleSave}
+              onClick={handleSubmit}
               disabled={loading}
               className="px-6 py-2 bg-primary text-white rounded-xl"
             >
-              {loading ? "Saving..." : "Save Changes"}
+              {loading ? "Creating..." : "Create Task"}
             </button>
 
             <button

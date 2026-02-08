@@ -8,7 +8,7 @@ export function AuthProvider({ children }) {
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
-  // ✅ login now accepts USER OBJECT
+  // ✅ LOGIN
   const login = (userData) => {
     const fakeToken = "jwt_token_example";
 
@@ -21,13 +21,23 @@ export function AuthProvider({ children }) {
     setUser(userWithToken);
   };
 
+  // ✅ LOGOUT
   const logout = () => {
     localStorage.removeItem("user");
     setUser(null);
   };
 
+  // ✅ UPDATE PROFILE (NEW – REQUIRED)
+  const updateProfile = (updatedData) => {
+    setUser((prev) => {
+      const updatedUser = { ...prev, ...updatedData };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      return updatedUser;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

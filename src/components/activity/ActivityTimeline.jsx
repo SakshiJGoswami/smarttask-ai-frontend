@@ -1,3 +1,4 @@
+import DashboardLayout from "../../layouts/DashboardLayout";
 import { activityMock } from "../../data/activityMock";
 import {
   Clock,
@@ -5,41 +6,79 @@ import {
   Brain,
   Folder,
   LogIn,
+  ListChecks,
 } from "lucide-react";
 
+/* -------- ICON MAP -------- */
 const iconMap = {
   login: <LogIn size={16} />,
   task: <CheckCircle size={16} />,
   ai: <Brain size={16} />,
   project: <Folder size={16} />,
+  update: <ListChecks size={16} />,
 };
 
 export default function ActivityTimeline() {
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 shadow-glass">
-      <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
+    <DashboardLayout>
+      <div
+        className="
+          bg-lightSurface border border-lightBorder
+          dark:bg-card dark:border-border
+          rounded-2xl p-6
+        "
+      >
+        {/* HEADER */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold mb-1">
+            Activity Timeline
+          </h1>
+          <p className="text-sm text-lightMuted dark:text-gray-400">
+            Track recent actions across tasks, projects, and AI insights
+          </p>
+        </div>
 
-      <div className="space-y-5">
-        {activityMock.map((item) => (
-          <div key={item.id} className="flex gap-4">
-            
-            {/* ICON */}
-            <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center">
-              {iconMap[item.type]}
-            </div>
+        {/* TIMELINE */}
+        <div className="space-y-6">
+          {activityMock.length === 0 ? (
+            <p className="text-lightMuted">
+              No recent activity
+            </p>
+          ) : (
+            activityMock.map((item) => (
+              <div
+                key={item.id}
+                className="flex gap-4 items-start"
+              >
+                {/* ICON */}
+                <div
+                  className="
+                    w-9 h-9 rounded-full
+                    bg-primary/15 text-primary
+                    flex items-center justify-center
+                    flex-shrink-0
+                  "
+                >
+                  {iconMap[item.type] || (
+                    <Clock size={16} />
+                  )}
+                </div>
 
-            {/* CONTENT */}
-            <div className="flex-1">
-              <p className="text-sm">{item.message}</p>
-              <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
-                <Clock size={12} />
-                {item.time}
+                {/* CONTENT */}
+                <div className="flex-1">
+                  <p className="text-sm leading-relaxed">
+                    {item.message}
+                  </p>
+                  <div className="flex items-center gap-1 text-xs text-lightMuted mt-1">
+                    <Clock size={12} />
+                    {item.time}
+                  </div>
+                </div>
               </div>
-            </div>
-
-          </div>
-        ))}
+            ))
+          )}
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

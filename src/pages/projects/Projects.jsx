@@ -1,69 +1,117 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
-
-const projects = [
-  { id: 1, name: "SmartTask AI", manager: "John Doe", progress: 72, status: "On Track" },
-  { id: 2, name: "Client CRM System", manager: "Sarah Chen", progress: 45, status: "At Risk" },
-  { id: 3, name: "Marketing Website", manager: "Mike Ross", progress: 90, status: "Almost Done" },
-];
+import { useProjects } from "../../context/ProjectContext";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Projects() {
+  const navigate = useNavigate();
+  const { projects, deleteProject } = useProjects();
+  const { user } = useAuth();
+
+  const role = user?.role || "employee";
+  const canManage = role !== "employee";
+
   return (
-    <DashboardLayout role="manager">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold mb-1">Projects</h1>
-        <p className="text-sm text-lightMuted dark:text-gray-400">
-          Overview of ongoing and completed projects
-        </p>
+    <DashboardLayout>
+      {/* HEADER */}
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-semibold mb-1">Projects</h1>
+          <p className="text-sm text-lightMuted">
+            Track and manage ongoing projects
+          </p>
+        </div>
+
+        {canManage && (
+          <Link
+            to="/projects/create"
+            className="px-4 py-2 bg-primary text-white rounded-xl"
+          >
+            + Create Project
+          </Link>
+        )}
       </div>
 
+      {/* PROJECT LIST */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {projects.map((project) => (
-          <ProjectCard key={project.id} {...project} />
-        ))}
+        {projects.length === 0 ? (
+          <p className="text-lightMuted">No projects available</p>
+        ) : (
+          projects.map((project) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              canManage={canManage}
+              onOpen={() => navigate(`/projects/${project.id}`)}
+              onDelete={() => {
+                if (
+                  window.confirm(
+                    "Are you sure you want to delete this project?"
+                  )
+                ) {
+                  deleteProject(project.id);
+                }
+              }}
+            />
+          ))
+        )}
       </div>
     </DashboardLayout>
   );
 }
 
-function ProjectCard({ id, name, manager, progress, status }) {
+/* -------------------- PROJECT CARD -------------------- */
+
+function ProjectCard({ project, canManage, onOpen, onDelete }) {
+  const { name, status, description } = project;
+
   const statusColor =
-    status === "On Track"
+    status === "Active"
       ? "text-green-600 dark:text-green-400"
-      : status === "Almost Done"
+      : status === "Completed"
       ? "text-cyan-600 dark:text-cyan-400"
       : "text-red-600 dark:text-red-400";
 
   return (
-    <Link
-      to={`/projects/${id}`}
+    <div
       className="
-        bg-lightSurface border border-lightBorder
-        dark:bg-card dark:border-border
-        rounded-2xl p-6 hover:border-primary transition
+        p-6 border border-lightBorder dark:border-border
+        rounded-2xl bg-lightSurface dark:bg-card
+        hover:border-primary transition
+        flex flex-col justify-between
       "
     >
-      <h2 className="text-lg font-semibold mb-1">{name}</h2>
-
-      <p className="text-sm text-lightMuted dark:text-gray-400 mb-4">
-        Manager: {manager}
-      </p>
-
-      <div className="mb-3">
-        <div className="h-2 bg-lightBorder dark:bg-border rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <p className="text-xs text-lightMuted dark:text-gray-400 mt-1">
-          {progress}% completed
+      <div
+        className="cursor-pointer"
+        onClick={onOpen}
+      >
+        <h2 className="font-semibold mb-1">{name}</h2>
+        <p className={`text-sm mb-2 ${statusColor}`}>
+          {status}
         </p>
+        {description && (
+          <p className="text-sm text-lightMuted line-clamp-2">
+            {description}
+          </p>
+        )}
       </div>
 
-      <p className={`text-sm font-medium ${statusColor}`}>
-        {status}
-      </p>
-    </Link>
+      {canManage && (
+        <div className="flex gap-2 pt-4">
+          <button
+            onClick={onOpen}
+            className="flex-1 px-3 py-2 text-sm border rounded-lg hover:border-primary"
+          >
+            View
+          </button>
+          <button
+            onClick={onDelete}
+            className="flex-1 px-3 py-2 text-sm bg-red-500 text-white rounded-lg"
+          >
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
