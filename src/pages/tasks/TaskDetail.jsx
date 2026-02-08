@@ -114,6 +114,7 @@ function DetailRow({ label, value }) {
     <div className="flex justify-between border-b py-3">
       <span className="text-lightMuted">{label}</span>
       <span className="font-medium">{value}</span>
+      
     </div>
   );
 }
