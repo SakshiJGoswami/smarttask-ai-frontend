@@ -2,15 +2,16 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useProjects } from "../../context/ProjectContext";
-
-/* -------------------- PAGE -------------------- */
+import toast from "react-hot-toast";
 
 export default function CreateProject() {
   const navigate = useNavigate();
   const { addProject } = useProjects();
 
+  /* ---------------- STATE ---------------- */
+
   const [form, setForm] = useState({
-    name: "",
+    title: "",
     status: "Active",
     description: "",
   });
@@ -18,39 +19,61 @@ export default function CreateProject() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  /* -------------------- HANDLERS -------------------- */
+  /* ---------------- HANDLERS ---------------- */
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
     setError("");
   };
 
-  const handleSubmit = () => {
-    if (!form.name.trim()) {
-      setError("Project name is required");
+  const handleSubmit = async () => {
+    if (loading) return; // ✅ block spam click
+
+    const cleanTitle = form.title.trim();
+    const cleanDescription = form.description.trim();
+
+    if (!cleanTitle) {
+      setError("Project title is required");
       return;
     }
 
-    if (form.name.trim().length < 3) {
-      setError("Project name must be at least 3 characters");
+    if (cleanTitle.length < 3) {
+      setError("Title must be at least 3 characters");
       return;
     }
 
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    setTimeout(() => {
-      addProject({
-        ...form,
-        name: form.name.trim(),
-        description: form.description.trim(),
+      await addProject({
+        title: cleanTitle,
+        description: cleanDescription || "", // ✅ never undefined
         status: form.status || "Active",
-        createdAt: new Date().toISOString(),
       });
 
-      setLoading(false);
+      toast.success("Project created successfully 🚀");
+
       navigate("/projects");
-    }, 600);
+    } catch (err) {
+      console.error("CREATE PROJECT ERROR:", err);
+
+      const message =
+        err?.message || "Failed to create project ❌";
+
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  /* ---------------- UI ---------------- */
 
   return (
     <DashboardLayout>
@@ -66,11 +89,11 @@ export default function CreateProject() {
         )}
 
         <div className="space-y-4">
-          {/* NAME */}
+          {/* TITLE */}
           <input
-            name="name"
-            placeholder="Project name"
-            value={form.name}
+            name="title"
+            placeholder="Project title"
+            value={form.title}
             onChange={handleChange}
             disabled={loading}
             className="w-full px-4 py-2 border rounded-xl"
@@ -105,7 +128,7 @@ export default function CreateProject() {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="px-6 py-2 bg-primary text-white rounded-xl"
+              className="px-6 py-2 bg-primary text-white rounded-xl disabled:opacity-60"
             >
               {loading ? "Creating..." : "Create Project"}
             </button>
@@ -113,7 +136,7 @@ export default function CreateProject() {
             <button
               onClick={() => navigate(-1)}
               disabled={loading}
-              className="px-6 py-2 bg-lightCard rounded-xl"
+              className="px-6 py-2 bg-lightCard rounded-xl disabled:opacity-60"
             >
               Cancel
             </button>

@@ -19,6 +19,10 @@ const iconMap = {
 };
 
 export default function ActivityTimeline() {
+  const activities = Array.isArray(activityMock)
+    ? activityMock
+    : [];
+
   return (
     <DashboardLayout>
       <div
@@ -40,14 +44,14 @@ export default function ActivityTimeline() {
 
         {/* TIMELINE */}
         <div className="space-y-6">
-          {activityMock.length === 0 ? (
+          {activities.length === 0 ? (
             <p className="text-lightMuted">
               No recent activity
             </p>
           ) : (
-            activityMock.map((item) => (
+            activities.map((item, index) => (
               <div
-                key={item.id}
+                key={item.id || index} 
                 className="flex gap-4 items-start"
               >
                 {/* ICON */}
@@ -67,11 +71,12 @@ export default function ActivityTimeline() {
                 {/* CONTENT */}
                 <div className="flex-1">
                   <p className="text-sm leading-relaxed">
-                    {item.message}
+                    {item.message || "Activity update"}
                   </p>
+
                   <div className="flex items-center gap-1 text-xs text-lightMuted mt-1">
                     <Clock size={12} />
-                    {item.time}
+                    {item.time || "Just now"}
                   </div>
                 </div>
               </div>

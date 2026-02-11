@@ -1,23 +1,36 @@
-import React from "react";
+import { useLocation } from "react-router-dom";
+import DashboardLayout from "../../layouts/DashboardLayout";
 import AIChatPanel from "../../components/ai/AIChatPanel";
+import { useAuth } from "../../context/AuthContext";
+import { useState } from "react";
 
 export default function AIAssistant() {
-  return (
-    <div className="p-6">
-      {/* PAGE HEADER */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-lightText dark:text-white">
-          AI Assistant
-        </h1>
-        <p className="text-sm text-lightMuted dark:text-slate-400 mt-1">
-          Ask questions about tasks, projects, risks, or productivity.
-        </p>
-      </div>
+  const { user } = useAuth();
+  const location = useLocation();
+  const [open, setOpen] = useState(true);
 
-      {/* AI CHAT PANEL */}
-      <div className="h-[calc(100vh-180px)]">
-        <AIChatPanel />
+  const taskContext = location.state?.taskContext || null;
+
+  return (
+    <DashboardLayout>
+      <div className="relative min-h-[70vh]">
+        {open && (
+          <AIChatPanel
+            role={user?.role}
+            onClose={() => setOpen(false)}
+            taskContext={taskContext}
+          />
+        )}
+
+        {!open && (
+          <button
+            onClick={() => setOpen(true)}
+            className="px-4 py-2 bg-primary text-white rounded-lg"
+          >
+            Open AI Assistant
+          </button>
+        )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

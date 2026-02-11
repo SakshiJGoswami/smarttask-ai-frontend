@@ -13,15 +13,12 @@ if (theme === "dark") {
 } else {
   document.documentElement.classList.remove("dark");
 }
-
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <AuthProvider>
-      <TaskProvider>
-        <ProjectProvider>
-          <App />
-        </ProjectProvider>
-      </TaskProvider>
-    </AuthProvider>
-  </React.StrictMode>
+  <AuthProvider>
+    <TaskProvider>
+      <ProjectProvider>
+        <App />
+      </ProjectProvider>
+    </TaskProvider>
+  </AuthProvider>
 );

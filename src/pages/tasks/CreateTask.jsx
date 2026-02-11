@@ -4,6 +4,7 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import { useTasks } from "../../context/TaskContext";
 import { useProjects } from "../../context/ProjectContext";
 import { useAuth } from "../../context/AuthContext";
+import toast from "react-hot-toast";
 
 export default function CreateTask() {
   const navigate = useNavigate();
@@ -13,62 +14,94 @@ export default function CreateTask() {
 
   const role = user?.role || "employee";
 
-  /* -------- FORM STATE -------- */
   const [form, setForm] = useState({
     title: "",
-    status: "Pending",
+    status: "Todo",          // ✅ FIXED (was Pending)
     priority: "Medium",
-    due: "",
-    assignedTo: "employee",
-    projectId: "",
+    dueDate: "",
+    assignedTo: "",
+    project: "",
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  /* -------- HANDLERS -------- */
+  /* ---------------- HANDLERS ---------------- */
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
     setError("");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (loading) return; // ✅ Prevent double submit
+
     if (!form.title.trim()) {
       setError("Task title is required");
       return;
     }
 
-    if (!form.projectId) {
+    if (!form.project) {
       setError("Please select a project");
       return;
     }
 
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    setTimeout(() => {
-      addTask({
-        ...form,
-        createdBy: role,
-        createdAt: new Date().toISOString(),
+      await addTask({
+        title: form.title.trim(),
+        status: form.status,
+        priority: form.priority,
+        dueDate: form.dueDate || null,
+        assignedTo: form.assignedTo || null,
+        project: form.project,
       });
-      setLoading(false);
+
+      toast.success("Task created successfully 🚀");
+
       navigate("/tasks");
-    }, 600);
+
+    } catch (err) {
+      console.error("CREATE TASK ERROR:", err);
+
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to create task ❌";
+
+      setError(msg);
+      toast.error(msg);
+
+    } finally {
+      setLoading(false);
+    }
   };
+
+  /* ---------------- UI ---------------- */
 
   return (
     <DashboardLayout>
       <div className="max-w-2xl">
-        <h1 className="text-2xl font-semibold mb-6">Create Task</h1>
+        <h1 className="text-2xl font-semibold mb-6">
+          Create Task
+        </h1>
 
         <div className="space-y-4">
           {error && (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-red-600">
+              {error}
+            </p>
           )}
 
           {/* TITLE */}
           <div>
-            <label className="text-sm mb-1 block">Title</label>
+            <label className="text-sm mb-1 block">
+              Title
+            </label>
             <input
               name="title"
               placeholder="Task title"
@@ -81,18 +114,26 @@ export default function CreateTask() {
 
           {/* PROJECT */}
           <div>
-            <label className="text-sm mb-1 block">Project</label>
+            <label className="text-sm mb-1 block">
+              Project
+            </label>
             <select
-              name="projectId"
-              value={form.projectId}
+              name="project"
+              value={form.project}
               onChange={handleChange}
               disabled={loading}
               className="w-full px-4 py-2 rounded-xl border"
             >
-              <option value="">Select project</option>
+              <option value="">
+                Select project
+              </option>
+
               {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
+                <option
+                  key={project._id}
+                  value={project._id}
+                >
+                  {project.title}
                 </option>
               ))}
             </select>
@@ -100,7 +141,9 @@ export default function CreateTask() {
 
           {/* STATUS */}
           <div>
-            <label className="text-sm mb-1 block">Status</label>
+            <label className="text-sm mb-1 block">
+              Status
+            </label>
             <select
               name="status"
               value={form.status}
@@ -108,16 +151,24 @@ export default function CreateTask() {
               disabled={loading}
               className="w-full px-4 py-2 rounded-xl border"
             >
-              <option>Pending</option>
-              <option>In Progress</option>
-              <option>Completed</option>
-              <option>Blocked</option>
+              <option value="Todo">Todo</option>
+              <option value="In Progress">
+                In Progress
+              </option>
+              <option value="Completed">
+                Completed
+              </option>
+              <option value="Blocked">
+                Blocked
+              </option>
             </select>
           </div>
 
           {/* PRIORITY */}
           <div>
-            <label className="text-sm mb-1 block">Priority</label>
+            <label className="text-sm mb-1 block">
+              Priority
+            </label>
             <select
               name="priority"
               value={form.priority}
@@ -125,36 +176,40 @@ export default function CreateTask() {
               disabled={loading}
               className="w-full px-4 py-2 rounded-xl border"
             >
-              <option>High</option>
-              <option>Medium</option>
-              <option>Low</option>
+              <option value="High">High</option>
+              <option value="Medium">
+                Medium
+              </option>
+              <option value="Low">Low</option>
             </select>
           </div>
 
-          {/* ASSIGNED TO (manager/admin only) */}
+          {/* ASSIGNED TO */}
           {role !== "employee" && (
             <div>
-              <label className="text-sm mb-1 block">Assigned To</label>
-              <select
+              <label className="text-sm mb-1 block">
+                Assign To (User ID)
+              </label>
+              <input
                 name="assignedTo"
+                placeholder="Paste User ID"
                 value={form.assignedTo}
                 onChange={handleChange}
                 disabled={loading}
                 className="w-full px-4 py-2 rounded-xl border"
-              >
-                <option value="employee">Employee</option>
-                <option value="manager">Manager</option>
-              </select>
+              />
             </div>
           )}
 
           {/* DUE DATE */}
           <div>
-            <label className="text-sm mb-1 block">Due Date</label>
+            <label className="text-sm mb-1 block">
+              Due Date
+            </label>
             <input
               type="date"
-              name="due"
-              value={form.due}
+              name="dueDate"
+              value={form.dueDate}
               onChange={handleChange}
               disabled={loading}
               className="w-full px-4 py-2 rounded-xl border"
@@ -166,7 +221,7 @@ export default function CreateTask() {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="px-6 py-2 bg-primary text-white rounded-xl"
+              className="px-6 py-2 bg-primary text-white rounded-xl disabled:opacity-60"
             >
               {loading ? "Creating..." : "Create Task"}
             </button>
@@ -174,7 +229,7 @@ export default function CreateTask() {
             <button
               onClick={() => navigate(-1)}
               disabled={loading}
-              className="px-6 py-2 bg-lightCard rounded-xl"
+              className="px-6 py-2 bg-lightCard rounded-xl disabled:opacity-60"
             >
               Cancel
             </button>

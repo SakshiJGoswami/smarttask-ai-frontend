@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { loginUser } from "../../services/authService";
+import toast from "react-hot-toast";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -9,35 +10,32 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
-      setError("Email and password are required");
+      toast.error("Email and password are required");
       return;
     }
 
-    setError("");
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    // ⏳ fake async login
-    setTimeout(() => {
-      try {
-        const result = loginUser(email, password);
+      // ✅ REAL backend call
+      const result = await loginUser(email, password);
 
-        // save user in context
-        login(result.user);
+      // ✅ Pass FULL response (user + token)
+      login(result);
 
-        // redirect based on role
-        navigate(`/${result.role}`);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }, 1000);
+      toast.success("Login successful ✅");
+
+      // ✅ Redirect using backend role
+      navigate(`/${result.user.role}`);
+    } catch (err) {
+      toast.error(err.message || "Login failed ❌");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -79,13 +77,6 @@ export default function Login() {
           <p className="text-sm text-lightMuted dark:text-gray-400 mb-8">
             Enter your credentials to access your dashboard.
           </p>
-
-          {/* ERROR */}
-          {error && (
-            <p className="mb-4 text-sm text-red-600 dark:text-red-400">
-              {error}
-            </p>
-          )}
 
           <div className="mb-5">
             <label className="text-sm mb-1 block text-lightMuted dark:text-gray-400">

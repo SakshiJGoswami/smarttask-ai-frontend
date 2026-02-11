@@ -33,15 +33,20 @@ export default function Analytics() {
     (t) => t.status === "Completed"
   ).length;
 
-  const pendingTasks = totalTasks - completedTasks;
+  // ✅ SAFER pending calculation
+  const pendingTasks = tasks.filter(
+    (t) => t.status !== "Completed"
+  ).length;
 
-  const avgProductivity =
+  // ✅ CLEANER productivity calc
+  const productivityPercent =
     totalTasks === 0
-      ? "0%"
-      : `${Math.round((completedTasks / totalTasks) * 100)}%`;
+      ? 0
+      : Math.round((completedTasks / totalTasks) * 100);
+
+  const avgProductivity = `${productivityPercent}%`;
 
   /* ---------------- TASK TREND (DERIVED) ---------------- */
-  // Frontend-safe simulation from live count (viva-safe)
 
   const taskTrendData = [
     { label: "Week 1", tasks: Math.max(0, totalTasks - 6) },
@@ -53,17 +58,26 @@ export default function Analytics() {
     { label: "Current", tasks: totalTasks },
   ];
 
-  /* ---------------- TEAM PRODUCTIVITY (DERIVED) ---------------- */
-  // Based on assignedTo (frontend logic)
+  /* ---------------- TEAM PRODUCTIVITY (FIXED) ---------------- */
 
   const productivityMap = {};
 
   tasks.forEach((task) => {
-    const assignee = task.assignedTo || "Unassigned";
+    // ✅ FIX: Proper assignee resolution
+    const assignee =
+      task.assignedTo?.name ||
+      task.assignedTo ||
+      "Unassigned";
+
     if (!productivityMap[assignee]) {
-      productivityMap[assignee] = { total: 0, completed: 0 };
+      productivityMap[assignee] = {
+        total: 0,
+        completed: 0,
+      };
     }
+
     productivityMap[assignee].total += 1;
+
     if (task.status === "Completed") {
       productivityMap[assignee].completed += 1;
     }
@@ -75,7 +89,9 @@ export default function Analytics() {
       value:
         data.total === 0
           ? 0
-          : Math.round((data.completed / data.total) * 100),
+          : Math.round(
+              (data.completed / data.total) * 100
+            ),
     })
   );
 

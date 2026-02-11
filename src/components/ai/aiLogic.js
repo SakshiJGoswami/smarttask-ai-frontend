@@ -1,49 +1,76 @@
-/* ================= AI LOGIC ================= */
+/* ================= AI SMART LOGIC ================= */
 
 export function generateSmartReply(input, page, role) {
-  const msg = input.toLowerCase();
+  const msg = input.toLowerCase().trim();
 
-  if (msg.includes("hi") || msg.includes("hello")) {
+  /* -------- GREETING -------- */
+  if (isGreeting(msg)) {
     return {
-      text: "👋 Hi! You can ask me about priorities, risks, or performance.",
+      text: "👋 Hi! Ask me about priorities, risks, deadlines, or performance.",
       confidence: "High",
     };
   }
 
-  if (msg.includes("priority")) {
+  /* -------- PRIORITY -------- */
+  if (containsWord(msg, "priority") || containsWord(msg, "prioritize")) {
     return {
       text:
         role === "employee"
-          ? "🎯 Focus on your high-priority task due today."
-          : "🎯 Focus on high-priority tasks due within the next 48 hours.",
+          ? "🎯 Focus on your highest-priority active task."
+          : "🎯 Review high-priority tasks due soon.",
       confidence: "High",
     };
   }
 
-  if (msg.includes("risk")) {
+  /* -------- RISK / DELAY -------- */
+  if (
+    containsWord(msg, "risk") ||
+    containsWord(msg, "delay") ||
+    containsWord(msg, "deadline")
+  ) {
     return {
-      text: "⚠️ 3 tasks are approaching deadlines and may cause delays.",
+      text:
+        page === "projects"
+          ? "⚠️ Some project deadlines may need attention."
+          : "⚠️ A few tasks are nearing deadlines.",
       confidence: "Medium",
     };
   }
 
-  if (msg.includes("team")) {
+  /* -------- TEAM -------- */
+  if (containsWord(msg, "team") || containsWord(msg, "workload")) {
     return {
       text:
         role === "manager"
-          ? "👥 One team member is overloaded. Consider redistributing tasks."
-          : "👥 Team workload is balanced overall.",
+          ? "👥 Team workload shows mild imbalance."
+          : "👥 Team performance looks steady.",
       confidence: "Medium",
     };
   }
 
-  if (msg.includes("project")) {
+  /* -------- PROJECT -------- */
+  if (containsWord(msg, "project")) {
     return {
-      text: "📁 One project deadline is at risk next week.",
+      text: "📁 Projects are progressing normally overall.",
       confidence: "High",
     };
   }
 
+  /* -------- PERFORMANCE / PRODUCTIVITY -------- */
+  if (
+    containsWord(msg, "performance") ||
+    containsWord(msg, "productivity")
+  ) {
+    return {
+      text:
+        role === "employee"
+          ? "📈 Your productivity trend looks consistent."
+          : "📈 Overall productivity is stable.",
+      confidence: "Medium",
+    };
+  }
+
+  /* -------- DEFAULT FALLBACK -------- */
   return getAutoSuggestion(page, role);
 }
 
@@ -51,22 +78,44 @@ export function generateSmartReply(input, page, role) {
 
 export function getAutoSuggestion(page, role) {
   const base = {
-    analytics: "📊 Analytics are stable. Want insights on productivity?",
-    tasks: "📝 You have pending tasks. Ask what to prioritize.",
-    projects: "📁 Projects look healthy. Ask about deadlines.",
-    team: "👥 Team performance is steady. Ask about workload.",
-    dashboard: "⚡ Everything looks stable. Ask me something specific.",
+    analytics:
+      "📊 Analytics are stable. Want insights on productivity?",
+    tasks:
+      "📝 You have active tasks. Ask what to prioritize.",
+    projects:
+      "📁 Projects look healthy. Ask about deadlines.",
+    team:
+      "👥 Team activity is steady. Ask about workload.",
+    dashboard:
+      "⚡ Everything looks stable. Ask me something specific.",
   };
 
   const roleHint =
     role === "admin"
-      ? " As an admin, monitor overall system performance."
+      ? " As an admin, monitor system-wide performance."
       : role === "manager"
-      ? " As a manager, focus on deadlines and team balance."
+      ? " As a manager, track deadlines and team balance."
       : " Focus on your assigned priorities.";
 
   return {
     text: (base[page] || base.dashboard) + roleHint,
     confidence: "Low",
   };
+}
+
+/* ================= HELPERS ================= */
+
+function isGreeting(msg) {
+  return (
+    msg === "hi" ||
+    msg === "hello" ||
+    msg === "hey" ||
+    msg.startsWith("hi ") ||
+    msg.startsWith("hello ")
+  );
+}
+
+function containsWord(msg, word) {
+  const regex = new RegExp(`\\b${word}\\b`, "i");
+  return regex.test(msg);
 }

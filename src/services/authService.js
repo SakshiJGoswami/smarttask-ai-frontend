@@ -1,75 +1,79 @@
-// src/services/authService.js
-// Frontend mock auth service (backend will replace this later)
+import api from "./apiClient";
 
-export function loginUser(email, password) {
+// ================= LOGIN =================
+export async function loginUser(email, password) {
   if (!email || !password) {
     throw new Error("Email and password required");
   }
 
-  // role decision (mock)
-  if (email === "admin@smarttask.ai") {
-    return {
-      role: "admin",
-      user: {
-        name: "Admin User",
-        email,
-        role: "admin",
-      },
-    };
-  }
+  try {
+    const res = await api.post("/auth/login", { email, password });
 
-  if (email === "manager@smarttask.ai") {
-    return {
-      role: "manager",
-      user: {
-        name: "Manager User",
-        email,
-        role: "manager",
-      },
-    };
-  }
+    // ✅ Backend returns: { user, token }
+    return res.data;
 
-  // default → employee
-  return {
-    role: "employee",
-    user: {
-      name: "Employee User",
-      email,
-      role: "employee",
-    },
-  };
+  } catch (error) {
+    console.error(
+      "LOGIN ERROR:",
+      error.response?.data || error.message
+    );
+
+    throw new Error(
+      error.response?.data?.message || "Login failed ❌"
+    );
+  }
 }
-// src/services/authService.js
 
-export function registerUser(name, email, password) {
+// ================= REGISTER =================
+export async function registerUser(name, email, password) {
   if (!name || !email || !password) {
     throw new Error("All fields are required");
   }
 
-  // mock role decision
-  let role = "employee";
-  if (email === "admin@smarttask.ai") role = "admin";
-  else if (email === "manager@smarttask.ai") role = "manager";
-
-  return {
-    role,
-    user: {
+  try {
+    const res = await api.post("/auth/register", {
       name,
       email,
-      role,
-    },
-  };
-}
-// src/services/authService.js
+      password,
+    });
 
+    return res.data;
+
+  } catch (error) {
+    console.error(
+      "REGISTER ERROR:",
+      error.response?.data || error.message
+    );
+
+    throw new Error(
+      error.response?.data?.message || "Registration failed ❌"
+    );
+  }
+}
+
+// ================= RESET PASSWORD (Mock) =================
 export function resetPassword(email) {
   if (!email) {
     throw new Error("Email is required");
   }
 
-  // mock success (backend will handle real email sending)
   return {
     success: true,
-    message: "If this email exists, a reset link has been sent.",
+    message: "Password reset feature coming soon ✉️",
   };
+}
+
+// ================= FETCH CURRENT USER =================
+export async function fetchMe() {
+  try {
+    const res = await api.get("/auth/me");
+    return res.data;
+
+  } catch (error) {
+    console.error("FETCH ME ERROR:", error);
+
+    throw new Error(
+      error.response?.data?.message || "Session expired ❌"
+    );
+  }
 }

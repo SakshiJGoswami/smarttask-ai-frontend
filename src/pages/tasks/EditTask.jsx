@@ -2,84 +2,134 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useTasks } from "../../context/TaskContext";
 import { useState, useEffect } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
+import toast from "react-hot-toast";
 
 export default function EditTask() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { tasks, updateTask } = useTasks();
 
-  const existingTask = tasks.find((t) => t.id === id);
+  // ✅ Find task using Mongo _id
+  const existingTask = tasks.find(
+    (t) => String(t._id) === String(id)
+  );
 
   const [form, setForm] = useState({
     title: "",
-    status: "In Progress",
+    status: "Todo",
     priority: "Medium",
-    due: "",
+    dueDate: "",
     assignedTo: "",
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  /* -------- LOAD EXISTING TASK -------- */
+  /* ---------------- LOAD TASK ---------------- */
+
   useEffect(() => {
-    if (existingTask) {
-      setForm({
-        title: existingTask.title || "",
-        status: existingTask.status || "In Progress",
-        priority: existingTask.priority || "Medium",
-        due: existingTask.due || "",
-        assignedTo: existingTask.assignedTo || "",
-      });
-    }
+    if (!existingTask) return;
+
+    setForm({
+      title: existingTask.title || "",
+      status: existingTask.status || "Todo",
+      priority: existingTask.priority || "Medium",
+
+      // ✅ Format date for input[type=date]
+      dueDate: existingTask.dueDate
+        ? new Date(existingTask.dueDate)
+            .toISOString()
+            .substring(0, 10)
+        : "",
+
+      assignedTo: existingTask.assignedTo?._id || "",
+    });
   }, [existingTask]);
 
-  /* -------- TASK NOT FOUND -------- */
+  /* ---------------- TASK NOT FOUND ---------------- */
+
   if (!existingTask) {
     return (
       <DashboardLayout>
-        <p className="text-red-500">Task not found</p>
+        <p className="text-red-500">
+          Task not found ❌
+        </p>
       </DashboardLayout>
     );
   }
 
-  /* -------- HANDLERS -------- */
+  /* ---------------- HANDLERS ---------------- */
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
     setError("");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (loading) return; // ✅ Prevent spam click
+
     if (!form.title.trim()) {
       setError("Task title cannot be empty");
       return;
     }
 
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    setTimeout(() => {
-      updateTask(id, {
-        ...existingTask,
-        ...form,
+      await updateTask(existingTask._id, {
+        title: form.title.trim(),
+        status: form.status,
+        priority: form.priority,
+
+        // ✅ Null-safe values
+        dueDate: form.dueDate || null,
+        assignedTo: form.assignedTo || null,
       });
+
+      toast.success("Task updated successfully ✅");
+
+      navigate(`/tasks/${existingTask._id}`);
+
+    } catch (err) {
+      console.error("UPDATE TASK ERROR:", err);
+
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        "Update failed ❌";
+
+      setError(msg);
+      toast.error(msg);
+
+    } finally {
       setLoading(false);
-      navigate(`/tasks/${id}`);
-    }, 600);
+    }
   };
+
+  /* ---------------- UI ---------------- */
 
   return (
     <DashboardLayout>
       <div className="max-w-2xl">
-        <h1 className="text-2xl font-semibold mb-6">Edit Task</h1>
+        <h1 className="text-2xl font-semibold mb-6">
+          Edit Task
+        </h1>
 
         <div className="space-y-4">
           {error && (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-red-600">
+              {error}
+            </p>
           )}
 
           {/* TITLE */}
           <div>
-            <label className="text-sm mb-1 block">Title</label>
+            <label className="text-sm mb-1 block">
+              Title
+            </label>
             <input
               name="title"
               value={form.title}
@@ -91,7 +141,9 @@ export default function EditTask() {
 
           {/* STATUS */}
           <div>
-            <label className="text-sm mb-1 block">Status</label>
+            <label className="text-sm mb-1 block">
+              Status
+            </label>
             <select
               name="status"
               value={form.status}
@@ -99,16 +151,24 @@ export default function EditTask() {
               disabled={loading}
               className="w-full px-4 py-2 rounded-xl border"
             >
-              <option>Pending</option>
-              <option>In Progress</option>
-              <option>Completed</option>
-              <option>Blocked</option>
+              <option value="Todo">Todo</option>
+              <option value="In Progress">
+                In Progress
+              </option>
+              <option value="Completed">
+                Completed
+              </option>
+              <option value="Blocked">
+                Blocked
+              </option>
             </select>
           </div>
 
           {/* PRIORITY */}
           <div>
-            <label className="text-sm mb-1 block">Priority</label>
+            <label className="text-sm mb-1 block">
+              Priority
+            </label>
             <select
               name="priority"
               value={form.priority}
@@ -116,32 +176,38 @@ export default function EditTask() {
               disabled={loading}
               className="w-full px-4 py-2 rounded-xl border"
             >
-              <option>High</option>
-              <option>Medium</option>
-              <option>Low</option>
+              <option value="High">High</option>
+              <option value="Medium">
+                Medium
+              </option>
+              <option value="Low">Low</option>
             </select>
           </div>
 
           {/* ASSIGNED TO */}
           <div>
-            <label className="text-sm mb-1 block">Assigned To</label>
+            <label className="text-sm mb-1 block">
+              Assigned To (User ID)
+            </label>
             <input
               name="assignedTo"
               value={form.assignedTo}
               onChange={handleChange}
               disabled={loading}
+              placeholder="Paste User ID"
               className="w-full px-4 py-2 rounded-xl border"
-              placeholder="employee / user id"
             />
           </div>
 
           {/* DUE DATE */}
           <div>
-            <label className="text-sm mb-1 block">Due Date</label>
+            <label className="text-sm mb-1 block">
+              Due Date
+            </label>
             <input
               type="date"
-              name="due"
-              value={form.due}
+              name="dueDate"
+              value={form.dueDate}
               onChange={handleChange}
               disabled={loading}
               className="w-full px-4 py-2 rounded-xl border"
@@ -153,7 +219,7 @@ export default function EditTask() {
             <button
               onClick={handleSave}
               disabled={loading}
-              className="px-6 py-2 bg-primary text-white rounded-xl"
+              className="px-6 py-2 bg-primary text-white rounded-xl disabled:opacity-60"
             >
               {loading ? "Saving..." : "Save Changes"}
             </button>
@@ -161,7 +227,7 @@ export default function EditTask() {
             <button
               onClick={() => navigate(-1)}
               disabled={loading}
-              className="px-6 py-2 bg-lightCard rounded-xl"
+              className="px-6 py-2 bg-lightCard rounded-xl disabled:opacity-60"
             >
               Cancel
             </button>

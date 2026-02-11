@@ -3,37 +3,43 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import { useProjects } from "../../context/ProjectContext";
 import { useTasks } from "../../context/TaskContext";
 import { useAuth } from "../../context/AuthContext";
+import toast from "react-hot-toast";
 
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const { projects, deleteProject } = useProjects();
-  const { tasks } = useTasks();
+  const { tasks, loading } = useTasks();
   const { user } = useAuth();
 
   const role = user?.role || "employee";
   const canEdit = role !== "employee";
 
-  /* -------- FIND PROJECT -------- */
+  /* ---------------- FIND PROJECT ---------------- */
   const project = projects.find(
-    (p) => String(p.id) === String(id)
+    (p) => String(p._id) === String(id)
   );
 
   if (!project) {
     return (
       <DashboardLayout>
-        <p className="text-red-500">Project not found</p>
+        <p className="text-red-500">
+          Project not found ❌
+        </p>
       </DashboardLayout>
     );
   }
 
-  /* -------- PROJECT TASKS -------- */
-  // Convention: task.projectId === project.id
+  /* ---------------- FILTER TASKS ---------------- */
   const projectTasks = tasks.filter(
-    (t) => String(t.projectId) === String(project.id)
+    (t) =>
+      String(t.project?._id || t.project) ===
+      String(project._id)
   );
 
   const totalTasks = projectTasks.length;
+
   const completedTasks = projectTasks.filter(
     (t) => t.status === "Completed"
   ).length;
@@ -41,19 +47,36 @@ export default function ProjectDetail() {
   const progress =
     totalTasks === 0
       ? 0
-      : Math.round((completedTasks / totalTasks) * 100);
+      : Math.round(
+          (completedTasks / totalTasks) * 100
+        );
 
-  /* -------- ACTIONS -------- */
-  const handleDeleteProject = () => {
+  /* ---------------- DELETE PROJECT ---------------- */
+  const handleDeleteProject = async () => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this project?"
     );
+
     if (!confirmed) return;
 
-    deleteProject(id);
-    navigate("/projects");
+    try {
+      await deleteProject(project._id);
+
+      toast.success(
+        "Project deleted successfully 🗑️"
+      );
+
+      navigate("/projects");
+    } catch (err) {
+      console.error(
+        "DELETE PROJECT ERROR:",
+        err
+      );
+      toast.error("Delete failed ❌");
+    }
   };
 
+  /* ---------------- UI ---------------- */
   return (
     <DashboardLayout>
       <div className="max-w-3xl">
@@ -68,8 +91,14 @@ export default function ProjectDetail() {
         </div>
 
         {/* BASIC INFO */}
-        <DetailRow label="Name" value={project.name} />
-        <DetailRow label="Status" value={project.status} />
+        <DetailRow
+          label="Title"
+          value={project.title || "—"}
+        />
+        <DetailRow
+          label="Status"
+          value={project.status || "—"}
+        />
         <DetailRow
           label="Description"
           value={project.description || "—"}
@@ -80,24 +109,32 @@ export default function ProjectDetail() {
           <p className="text-sm mb-2">
             Progress: {progress}%
           </p>
+
           <div className="w-full h-3 bg-lightCard rounded-full overflow-hidden">
             <div
               className="h-full bg-primary transition-all"
-              style={{ width: `${progress}%` }}
+              style={{
+                width: `${progress}%`,
+              }}
             />
           </div>
+
           <p className="text-xs text-lightMuted mt-1">
             {completedTasks} of {totalTasks} tasks completed
           </p>
         </div>
 
-        {/* PROJECT TASKS */}
+        {/* TASKS */}
         <div className="mt-10">
           <h2 className="text-lg font-semibold mb-4">
             Project Tasks
           </h2>
 
-          {projectTasks.length === 0 ? (
+          {loading ? (
+            <p className="text-lightMuted">
+              Loading tasks...
+            </p>
+          ) : projectTasks.length === 0 ? (
             <p className="text-lightMuted">
               No tasks assigned to this project
             </p>
@@ -105,7 +142,7 @@ export default function ProjectDetail() {
             <div className="space-y-3">
               {projectTasks.map((task) => (
                 <div
-                  key={task.id}
+                  key={task._id}
                   className="
                     p-4 border border-lightBorder
                     rounded-xl flex justify-between items-center
@@ -122,7 +159,7 @@ export default function ProjectDetail() {
 
                   <button
                     onClick={() =>
-                      navigate(`/tasks/${task.id}`)
+                      navigate(`/tasks/${task._id}`)
                     }
                     className="text-sm text-primary"
                   >
@@ -139,7 +176,9 @@ export default function ProjectDetail() {
           <div className="flex gap-4 pt-8">
             <button
               onClick={() =>
-                navigate(`/projects/${id}/edit`)
+                navigate(
+                  `/projects/${project._id}/edit`
+                )
               }
               className="px-4 py-2 bg-primary text-white rounded-lg"
             >
@@ -159,13 +198,17 @@ export default function ProjectDetail() {
   );
 }
 
-/* -------------------- COMPONENT -------------------- */
+/* ---------------- DETAIL ROW ---------------- */
 
 function DetailRow({ label, value }) {
   return (
     <div className="flex justify-between border-b py-3">
-      <span className="text-lightMuted">{label}</span>
-      <span className="font-medium">{value}</span>
+      <span className="text-lightMuted">
+        {label}
+      </span>
+      <span className="font-medium">
+        {value}
+      </span>
     </div>
   );
 }

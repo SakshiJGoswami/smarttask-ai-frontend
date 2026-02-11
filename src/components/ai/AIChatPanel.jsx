@@ -1,40 +1,63 @@
 import { useState, useEffect } from "react";
-import { Send, X, Trash2, Database } from "lucide-react";
+import { Send, X, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
-import { generateSmartReply, getAutoSuggestion } from "./aiLogic";
+import { getAutoSuggestion } from "./aiLogic";
 import { useTasks } from "../../context/TaskContext";
 import { useProjects } from "../../context/ProjectContext";
 
-export default function AIChatPanel({ onClose, role }) {
+export default function AIChatPanel({ onClose, role, taskContext }) {
   const location = useLocation();
   const page = location.pathname.replace("/", "") || "dashboard";
 
   const { tasks } = useTasks();
   const { projects } = useProjects();
 
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(
-    (t) => t.status === "Completed"
-  ).length;
-  const totalProjects = projects.length;
-
   const STORAGE_KEY = `ai-chat-${page}-${role}`;
   const AUTO_KEY = `ai-auto-${page}-${role}`;
+
+  /* ---------------- SAFE LOAD ---------------- */
+
+  const loadStoredMessages = () => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  };
 
   /* ---------------- STATE ---------------- */
 
   const [messages, setMessages] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved
-      ? JSON.parse(saved)
-      : [
-          {
-            role: "ai",
-            text: `👋 Hi! I’m SmartTask AI. I’ll assist you on ${page} using available task and project data.`,
-            confidence: "Low",
-          },
-        ];
+    const stored = loadStoredMessages();
+    if (stored) return stored;
+
+    if (taskContext) {
+      return [
+        {
+          role: "ai",
+          text: `🤖 I’m analyzing this task:
+
+• Title: ${taskContext.title}
+• Status: ${taskContext.status}
+• Priority: ${taskContext.priority}
+• Due: ${taskContext.dueDate || "N/A"}
+• Assigned To: ${taskContext.assignedTo || "N/A"}
+
+Ask me about risks, delays, or next steps.`,
+          confidence: "High",
+        },
+      ];
+    }
+
+    return [
+      {
+        role: "ai",
+        text: `👋 Hi! I’m SmartTask AI. I’ll assist you on ${page}.`,
+        confidence: "Low",
+      },
+    ];
   });
 
   const [input, setInput] = useState("");
@@ -49,6 +72,7 @@ export default function AIChatPanel({ onClose, role }) {
   /* ---------------- AUTO SUGGESTION ---------------- */
 
   useEffect(() => {
+    if (taskContext) return;
     if (localStorage.getItem(AUTO_KEY)) return;
 
     const timer = setTimeout(() => {
@@ -59,31 +83,55 @@ export default function AIChatPanel({ onClose, role }) {
           ...getAutoSuggestion(page, role),
         },
       ]);
+
       localStorage.setItem(AUTO_KEY, "true");
     }, 600);
 
     return () => clearTimeout(timer);
-  }, [page, role, AUTO_KEY]);
+  }, [page, role, taskContext, AUTO_KEY]);
 
   /* ---------------- SEND MESSAGE ---------------- */
 
-  const sendMessage = (text = input) => {
-    if (!text.trim()) return;
+  const sendMessage = async (text = input) => {
+    if (!text.trim() || thinking) return;
 
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    const userMessage = { role: "user", text };
+
+    // ✅ ALWAYS use functional update to avoid stale state bug
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setThinking(true);
 
-    setTimeout(() => {
-      const reply = generateSmartReply(
-        text,
-        page,
-        role,
-        { totalTasks, completedTasks, totalProjects }
-      );
-      setMessages((prev) => [...prev, { role: "ai", ...reply }]);
+    try {
+      const api = (await import("../../services/apiClient")).default;
+
+      const res = await api.post("/ai/chat", {
+        messages: [...messages, userMessage],
+        taskContext,
+        pageContext: page,
+      });
+
+      const aiReply = res.data?.reply;
+
+      if (aiReply?.text) {
+        setMessages((prev) => [...prev, aiReply]);
+      } else {
+        throw new Error("Invalid AI reply");
+      }
+    } catch (error) {
+      console.error("AI CHAT ERROR:", error);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "🤖 AI server unavailable. Please try again.",
+          confidence: "Low",
+        },
+      ]);
+    } finally {
       setThinking(false);
-    }, 900);
+    }
   };
 
   /* ---------------- CLEAR CHAT ---------------- */
@@ -91,6 +139,7 @@ export default function AIChatPanel({ onClose, role }) {
   const clearChat = () => {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(AUTO_KEY);
+
     setMessages([
       {
         role: "ai",
@@ -100,11 +149,19 @@ export default function AIChatPanel({ onClose, role }) {
     ]);
   };
 
-  const quickQuestions = [
-    "What should I prioritize?",
-    "Any risks?",
-    "Project status summary?",
-  ];
+  /* ---------------- QUICK QUESTIONS ---------------- */
+
+  const quickQuestions = taskContext
+    ? [
+        "What are the risks?",
+        "What should I do next?",
+        "Is this task delayed?",
+      ]
+    : [
+        "What should I prioritize?",
+        "Any risks?",
+        "Project summary?",
+      ];
 
   /* ---------------- UI ---------------- */
 
@@ -121,7 +178,6 @@ export default function AIChatPanel({ onClose, role }) {
             w-[380px] h-full flex flex-col
             bg-lightSurface border-l border-lightBorder
             dark:bg-card dark:border-border
-            backdrop-blur-xl
           "
           initial={{ x: 420 }}
           animate={{ x: 0 }}
@@ -146,20 +202,6 @@ export default function AIChatPanel({ onClose, role }) {
             </div>
           </div>
 
-          {/* CONTEXT SUMMARY */}
-          <div className="px-4 py-3 border-b border-lightBorder dark:border-border text-xs flex gap-3">
-            <div className="flex items-center gap-1">
-              <Database size={12} /> Tasks: {totalTasks}
-            </div>
-            <div>Completed: {completedTasks}</div>
-            <div>Projects: {totalProjects}</div>
-          </div>
-
-          {/* DISCLAIMER */}
-          <div className="px-4 py-2 text-[11px] text-lightMuted border-b">
-            AI provides insights only. It does NOT create, edit, or delete tasks or projects.
-          </div>
-
           {/* CHAT */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((m, i) => (
@@ -175,7 +217,8 @@ export default function AIChatPanel({ onClose, role }) {
 
                 {m.role === "ai" && m.confidence && (
                   <div className="mt-2 text-xs text-lightMuted">
-                    Confidence: <span className="text-primary">{m.confidence}</span>
+                    Confidence:{" "}
+                    <span className="text-primary">{m.confidence}</span>
                   </div>
                 )}
               </div>
@@ -194,11 +237,13 @@ export default function AIChatPanel({ onClose, role }) {
               <button
                 key={q}
                 onClick={() => sendMessage(q)}
+                disabled={thinking}
                 className="
                   px-3 py-1 rounded-full text-xs
                   bg-lightCard border border-lightBorder
                   dark:bg-card dark:border-border
                   hover:bg-primary/20
+                  disabled:opacity-50
                 "
               >
                 {q}
@@ -208,22 +253,21 @@ export default function AIChatPanel({ onClose, role }) {
 
           {/* INPUT */}
           <div className="p-4 border-t border-lightBorder dark:border-border">
-            <div className="
-              flex items-center gap-2
-              bg-lightBg border border-lightBorder
-              dark:bg-surface dark:border-border
-              rounded-xl px-3
-            ">
+            <div className="flex items-center gap-2 bg-lightBg border border-lightBorder dark:bg-surface dark:border-border rounded-xl px-3">
               <input
                 className="flex-1 bg-transparent py-3 text-sm outline-none"
-                placeholder={`Ask about ${page}...`}
+                placeholder="Ask AI..."
                 value={input}
+                disabled={thinking}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && sendMessage()
+                }
               />
               <button
                 onClick={() => sendMessage()}
-                className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-white"
+                disabled={thinking}
+                className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-white disabled:opacity-50"
               >
                 <Send size={16} />
               </button>
